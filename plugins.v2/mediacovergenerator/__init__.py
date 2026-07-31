@@ -895,7 +895,7 @@ class MediaCoverGenerator(_PluginBase):
             return [
                 {
                     "component": "VRow",
-                    "props": {"align": "center", "noGutters": True, "class": "ga-2 mb-1"},
+                    "props": {"align": "center", "noGutters": True, "class": "ga-1 mb-1", "style": "flex-wrap: wrap;"},
                     "content": [
                         {
                             "component": "VCol",
@@ -906,6 +906,7 @@ class MediaCoverGenerator(_PluginBase):
                                     "props": {
                                         "variant": "flat",
                                         "color": "primary",
+                                        "size": "small",
                                         "class": "text-none",
                                         "prepend-icon": "mdi-refresh",
                                     },
@@ -923,6 +924,7 @@ class MediaCoverGenerator(_PluginBase):
                                     "props": {
                                         "variant": "flat",
                                         "color": "error",
+                                        "size": "small",
                                         "class": "text-none",
                                         "prepend-icon": "mdi-stop-circle-outline",
                                     },
@@ -933,7 +935,7 @@ class MediaCoverGenerator(_PluginBase):
                         },
                         {
                             "component": "VCol",
-                            "props": {"cols": "auto"},
+                            "props": {"cols": "auto", "class": "ml-2"},
                             "content": [
                                 {
                                     "component": "div",
@@ -949,7 +951,7 @@ class MediaCoverGenerator(_PluginBase):
                     "props": {
                         "modelValue": progress_value,
                         "color": "primary",
-                        "height": "8",
+                        "height": "6",
                         "rounded": True,
                         "class": "mb-2",
                     },
