@@ -416,7 +416,7 @@ def create_style_static_1(image_path, title, font_path, font_size=(170,75), font
             blended_bg_img = Image.fromarray(blended_bg)
 
             # 添加胶片颗粒效果增强纹理感
-            blended_bg_img = add_film_grain(blended_bg_img, intensity=0.03)
+            blended_bg_img = add_film_grain(blended_bg_img, intensity=0)
 
             # 创建最终画布
             canvas = Image.new("RGBA", canvas_size, (0, 0, 0, 0))
@@ -662,3 +662,4 @@ def create_style_static_1(image_path, title, font_path, font_size=(170,75), font
 def create_style_single_1(*args, **kwargs):
     """兼容旧命名"""
     return create_style_static_1(*args, **kwargs)
+
