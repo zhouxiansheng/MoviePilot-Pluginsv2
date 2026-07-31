@@ -637,7 +637,7 @@ def create_blur_background(image_path, template_width, template_height, backgrou
 
     # 4. 添加胶片颗粒效果
     # 假设 add_film_grain 函数存在且正常工作
-    final_bg_img = add_film_grain(blended_bg_img, intensity=0.03)
+    final_bg_img = add_film_grain(blended_bg_img, intensity=0)
 
     return final_bg_img
 
@@ -1053,3 +1053,4 @@ def create_style_animated_3(library_dir, title, font_path, font_size=(170,75), f
     except Exception as e:
         logger.error(f"创建 style_animated_3 失败: {e}")
         return False
+
