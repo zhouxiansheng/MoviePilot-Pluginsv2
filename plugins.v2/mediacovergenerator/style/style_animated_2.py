@@ -164,6 +164,7 @@ def create_style_animated_2(
     is_blur=False,
     blur_size=50,
     color_ratio=0.8,
+    bg_grain=0,
     resolution_config=None,
     bg_color_config=None,
     animation_duration=10,
@@ -242,7 +243,7 @@ def create_style_animated_2(
             bg_img = ImageOps.fit(src, (target_w, target_h), method=Image.Resampling.BICUBIC)
             bg_img = bg_img.filter(ImageFilter.GaussianBlur(radius=max(1, int(blur_size * target_h / 1080.0))))
             bg_mix = Image.blend(bg_img, Image.new("RGB", (target_w, target_h), darken_color(bg_color, 0.85)), float(_clamp(float(color_ratio), 0.0, 1.0)))
-            bg_mix = add_film_grain(bg_mix, intensity=0.03)
+            bg_mix = add_film_grain(bg_mix, intensity=bg_grain)
             prepared_left_bg.append(bg_mix.convert("RGBA"))
 
             prepared_text.append(_build_text_layer((target_w, target_h), title, font_path, font_size, font_offset, bg_color))

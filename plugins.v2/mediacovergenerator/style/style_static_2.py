@@ -160,7 +160,7 @@ def create_shadow_mask(size, split_top=0.5, split_bottom=0.33, feather_size=40):
     
     return mask
 
-def create_style_static_2(image_path, title, font_path, font_size=(170,75), font_offset=(0,40,40), blur_size=50, color_ratio=0.8, resolution_config=None, bg_color_config=None):
+def create_style_static_2(image_path, title, font_path, font_size=(170,75), font_offset=(0,40,40), blur_size=50, color_ratio=0.8, bg_grain=0, resolution_config=None, bg_color_config=None):
     try:
         zh_font_path, en_font_path = font_path
         title_zh, title_en = title
@@ -238,8 +238,8 @@ def create_style_static_2(image_path, title, font_path, font_size=(170,75), font
         blended_bg = np.clip(blended_bg, 0, 255).astype(np.uint8)
         blended_bg_img = Image.fromarray(blended_bg)
         
-        # 添加胶片颗粒效果增强纹理感
-        blended_bg_img = add_film_grain(blended_bg_img, intensity=0.05)
+        # 添加胶片颗粒效果增强纹理感（强度由用户配置，0 表示无噪点）
+        blended_bg_img = add_film_grain(blended_bg_img, intensity=bg_grain)
         
         # 创建斜线分割的蒙版
         diagonal_mask = create_diagonal_mask(canvas_size, split_top, split_bottom)

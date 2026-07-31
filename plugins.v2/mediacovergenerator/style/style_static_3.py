@@ -567,7 +567,7 @@ def get_poster_primary_color(image_path):
         # 返回默认颜色作为备选
         return [(150, 100, 50, 255)]
 
-def create_blur_background(image_path, template_width, template_height, background_color, blur_size, color_ratio, lighten_gradient_strength=0.6):
+def create_blur_background(image_path, template_width, template_height, background_color, blur_size, color_ratio, lighten_gradient_strength=0.6, grain_intensity=0):
     """
     创建模糊背景图像，将原始图像模糊化并与指定颜色混合，添加胶片颗粒效果
     
@@ -653,12 +653,12 @@ def create_blur_background(image_path, template_width, template_height, backgrou
 
     # 4. 添加胶片颗粒效果
     # 假设 add_film_grain 函数存在且正常工作
-    final_bg_img = add_film_grain(blended_bg_img, intensity=0.03)
+    final_bg_img = add_film_grain(blended_bg_img, intensity=grain_intensity)
 
     return final_bg_img
 
 
-def create_style_static_3(library_dir, title, font_path, font_size=(170,75), font_offset=(0,40,40), is_blur=False, blur_size=50, color_ratio=0.8, resolution_config=None, bg_color_config=None):
+def create_style_static_3(library_dir, title, font_path, font_size=(170,75), font_offset=(0,40,40), is_blur=False, blur_size=50, color_ratio=0.8, bg_grain=0, resolution_config=None, bg_color_config=None):
     """
     生成海报：多张图片以旋转列的形式排列在渐变背景上。
     输入:
@@ -762,7 +762,7 @@ def create_style_static_3(library_dir, title, font_path, font_size=(170,75), fon
 
         # 创建渐变背景作为模板
         if is_blur:
-          colored_bg_img = create_blur_background(first_image_path, template_width, template_height, blur_color, blur_size * scale, color_ratio)
+          colored_bg_img = create_blur_background(first_image_path, template_width, template_height, blur_color, blur_size * scale, color_ratio, grain_intensity=bg_grain)
         else:
           colored_bg_img = create_gradient_background(template_width, template_height, gradient_color)
 

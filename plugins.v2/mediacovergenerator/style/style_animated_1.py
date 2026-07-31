@@ -289,6 +289,7 @@ def create_style_animated_1(
     is_blur=False,
     blur_size=50,
     color_ratio=0.8,
+    bg_grain=0,
     resolution_config=None,
     bg_color_config=None,
     animation_duration=4,
@@ -456,7 +457,7 @@ def create_style_animated_1(
                 Image.new("RGB", (target_w, target_h), bg_color),
                 color_ratio,
             )
-            bg_img = add_film_grain(bg_img, 0.03)
+            bg_img = add_film_grain(bg_img, bg_grain)
             bg_bases_rgba.append(bg_img.convert("RGBA"))
 
         # 文本阴影主色使用第一张图的背景色系

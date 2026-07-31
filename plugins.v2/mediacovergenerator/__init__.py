@@ -104,6 +104,7 @@ class MediaCoverGenerator(_PluginBase):
     _en_font_size = None
     _blur_size = 50
     _color_ratio = 0.8
+    _bg_grain = 0
     _use_primary = False
     _seen_keys = set()
     _zh_font_custom = ''
@@ -188,6 +189,13 @@ class MediaCoverGenerator(_PluginBase):
                 self._color_ratio = float(config.get("color_ratio", 0.8))
             except (ValueError, TypeError):
                 self._color_ratio = 0.8
+            try:
+                self._bg_grain = float(config.get("bg_grain", 0))
+            except (ValueError, TypeError):
+                self._bg_grain = 0
+            # 噪点强度合法范围校验：0-0.2
+            if self._bg_grain < 0 or self._bg_grain > 0.2:
+                self._bg_grain = 0
             self._use_primary = config.get("use_primary")
             self._zh_font_custom = config.get("zh_font_custom", "")
             self._en_font_custom = config.get("en_font_custom", "")
@@ -408,6 +416,7 @@ class MediaCoverGenerator(_PluginBase):
             "en_font_size": self._en_font_size,
             "blur_size": self._blur_size,
             "color_ratio": self._color_ratio,
+            "bg_grain": self._bg_grain,
             "use_primary": self._use_primary,
             "zh_font_custom": self._zh_font_custom,
             "en_font_custom": self._en_font_custom,
@@ -1239,6 +1248,26 @@ class MediaCoverGenerator(_PluginBase):
                                     'prependInnerIcon': 'mdi-format-color-fill',
                                     'placeholder': '留空使用预设占比',
                                     'hint': '颜色所占的比例，0-1，默认 0.8',
+                                    'persistentHint': True
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'VCol',
+                        'props': {
+                            'cols': 12,
+                            'md': 6
+                        },
+                        'content': [
+                            {
+                                'component': 'VTextField',
+                                'props': {
+                                    'model': 'bg_grain',
+                                    'label': '背景噪点强度',
+                                    'prependInnerIcon': 'mdi-grain',
+                                    'placeholder': '留空则无噪点',
+                                    'hint': '模糊背景的胶片颗粒强度，0 为无噪点（默认），0.03 为轻微颗粒，最大 0.2',
                                     'persistentHint': True
                                 }
                             }
@@ -2188,6 +2217,7 @@ class MediaCoverGenerator(_PluginBase):
             "en_font_size": None,
             "blur_size": 50,
             "color_ratio": 0.8,
+            "bg_grain": 0,
             "title_scale": 1.0,
             "use_primary": False,
             "resolution": "480p",
@@ -3008,6 +3038,7 @@ class MediaCoverGenerator(_PluginBase):
 
         blur_size = self._blur_size or 50
         color_ratio = self._color_ratio or 0.8
+        bg_grain = self._bg_grain if self._bg_grain is not None else 0
 
         # 检查字体路径是否有效
         if not self._zh_font_path or not self._en_font_path:
@@ -3048,6 +3079,7 @@ class MediaCoverGenerator(_PluginBase):
                                                 font_offset=font_offset,
                                                 blur_size=blur_size,
                                                 color_ratio=color_ratio,
+                                                bg_grain=bg_grain,
                                                 resolution_config=self._resolution_config,
                                                 bg_color_config=bg_color_config)
         elif self._cover_style == 'static_2':
@@ -3056,6 +3088,7 @@ class MediaCoverGenerator(_PluginBase):
                                                 font_offset=font_offset,
                                                 blur_size=blur_size,
                                                 color_ratio=color_ratio,
+                                                bg_grain=bg_grain,
                                                 resolution_config=self._resolution_config,
                                                 bg_color_config=bg_color_config)
         elif self._cover_style == 'static_4':
@@ -3064,6 +3097,7 @@ class MediaCoverGenerator(_PluginBase):
                                                 font_offset=font_offset,
                                                 blur_size=blur_size,
                                                 color_ratio=color_ratio,
+                                                bg_grain=bg_grain,
                                                 resolution_config=self._resolution_config,
                                                 bg_color_config=bg_color_config)
         elif self._cover_style == 'static_3':
@@ -3082,6 +3116,7 @@ class MediaCoverGenerator(_PluginBase):
                                                     is_blur=self._multi_1_blur,
                                                     blur_size=blur_size,
                                                     color_ratio=color_ratio,
+                                                    bg_grain=bg_grain,
                                                     resolution_config=self._resolution_config,
                                                     bg_color_config=bg_color_config)
             else:
@@ -3107,6 +3142,7 @@ class MediaCoverGenerator(_PluginBase):
                                                     is_blur=self._multi_1_blur,
                                                     blur_size=blur_size,
                                                     color_ratio=color_ratio,
+                                                    bg_grain=bg_grain,
                                                     resolution_config=self._resolution_config,
                                                     bg_color_config=bg_color_config,
                                                     animation_duration=self._animation_duration,
@@ -3139,6 +3175,7 @@ class MediaCoverGenerator(_PluginBase):
                                                     is_blur=self._multi_1_blur,
                                                     blur_size=blur_size,
                                                     color_ratio=color_ratio,
+                                                    bg_grain=bg_grain,
                                                     resolution_config=self._resolution_config,
                                                     bg_color_config=bg_color_config,
                                                     animation_duration=self._animation_duration,
@@ -3169,6 +3206,7 @@ class MediaCoverGenerator(_PluginBase):
                                                     is_blur=self._multi_1_blur,
                                                     blur_size=blur_size,
                                                     color_ratio=color_ratio,
+                                                    bg_grain=bg_grain,
                                                     resolution_config=self._resolution_config,
                                                     bg_color_config=bg_color_config,
                                                     animation_duration=self._animation_duration,
@@ -3199,6 +3237,7 @@ class MediaCoverGenerator(_PluginBase):
                                                     is_blur=self._multi_1_blur,
                                                     blur_size=blur_size,
                                                     color_ratio=color_ratio,
+                                                    bg_grain=bg_grain,
                                                     resolution_config=self._resolution_config,
                                                     bg_color_config=bg_color_config,
                                                     animation_duration=self._animation_duration,

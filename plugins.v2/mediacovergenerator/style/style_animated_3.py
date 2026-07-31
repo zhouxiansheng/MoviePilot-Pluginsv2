@@ -554,7 +554,7 @@ def get_poster_primary_color(image_path):
         # 返回默认颜色作为备选
         return [(150, 100, 50, 255)]
 
-def create_blur_background(image_path, template_width, template_height, background_color, blur_size, color_ratio, lighten_gradient_strength=0.6):
+def create_blur_background(image_path, template_width, template_height, background_color, blur_size, color_ratio, lighten_gradient_strength=0.6, grain_intensity=0):
     """
     创建模糊背景图像，将原始图像模糊化并与指定颜色混合，添加胶片颗粒效果
     
@@ -637,7 +637,7 @@ def create_blur_background(image_path, template_width, template_height, backgrou
 
     # 4. 添加胶片颗粒效果
     # 假设 add_film_grain 函数存在且正常工作
-    final_bg_img = add_film_grain(blended_bg_img, intensity=0.03)
+    final_bg_img = add_film_grain(blended_bg_img, intensity=grain_intensity)
 
     return final_bg_img
 
@@ -647,8 +647,8 @@ def create_blur_background(image_path, template_width, template_height, backgrou
 
 
 
-def create_style_animated_3(library_dir, title, font_path, font_size=(170,75), font_offset=(0,40,40), 
-                           is_blur=False, blur_size=50, color_ratio=0.8, resolution_config=None, 
+def create_style_animated_3(library_dir, title, font_path, font_size=(170,75), font_offset=(0,40,40),
+                           is_blur=False, blur_size=50, color_ratio=0.8, bg_grain=0, resolution_config=None, 
                            bg_color_config=None, animation_duration=12, animation_scroll='down', 
                            animation_fps=15, animation_format='apng', animation_resolution='300x200', 
                            animation_reduce_colors='strong', stop_event=None):
@@ -722,7 +722,7 @@ def create_style_animated_3(library_dir, title, font_path, font_size=(170,75), f
 
         # 直接在目标分辨率生成背景
         if is_blur:
-            bg_img = create_blur_background(first_image_path, target_w, target_h, blur_color, blur_size * scale, color_ratio)
+            bg_img = create_blur_background(first_image_path, target_w, target_h, blur_color, blur_size * scale, color_ratio, grain_intensity=bg_grain)
         else:
             bg_img = create_gradient_background(target_w, target_h, gradient_color)
 

@@ -227,7 +227,7 @@ def rotate_image(img, angle, bg_color=(0, 0, 0, 0)):
 
 
 @memory_efficient_operation
-def create_style_static_1(image_path, title, font_path, font_size=(170,75), font_offset=(0,40,40), blur_size=50, color_ratio=0.8, resolution_config=None, bg_color_config=None):
+def create_style_static_1(image_path, title, font_path, font_size=(170,75), font_offset=(0,40,40), blur_size=50, color_ratio=0.8, bg_grain=0, resolution_config=None, bg_color_config=None):
     try:
         logger.info("开始创建单图封面...")
 
@@ -322,8 +322,8 @@ def create_style_static_1(image_path, title, font_path, font_size=(170,75), font
             blended_bg = np.clip(blended_bg, 0, 255).astype(np.uint8)
             blended_bg_img = Image.fromarray(blended_bg)
 
-            # 添加胶片颗粒效果增强纹理感
-            blended_bg_img = add_film_grain(blended_bg_img, intensity=0.03)
+            # 添加胶片颗粒效果增强纹理感（强度由用户配置，0 表示无噪点）
+            blended_bg_img = add_film_grain(blended_bg_img, intensity=bg_grain)
 
             # 创建最终画布
             canvas = Image.new("RGBA", canvas_size, (0, 0, 0, 0))

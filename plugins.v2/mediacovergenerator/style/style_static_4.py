@@ -42,6 +42,7 @@ def create_style_static_4(
     font_offset=(0, 40, 40),
     blur_size=50,
     color_ratio=0.8,
+    bg_grain=0,
     resolution_config=None,
     bg_color_config=None,
 ):
