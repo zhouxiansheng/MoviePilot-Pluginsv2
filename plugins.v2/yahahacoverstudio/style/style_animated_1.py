@@ -469,7 +469,7 @@ def create_style_animated_1(
                 Image.new("RGB", (target_w, target_h), bg_color),
                 color_ratio,
             )
-            bg_img = add_film_grain(bg_img, 0.03)
+            bg_img = add_film_grain(bg_img, 0)
             bg_bases_rgba.append(bg_img.convert("RGBA"))
 
         # 文本阴影主色使用第一张图的背景色系
@@ -875,3 +875,4 @@ def create_style_animated_1(
 
         logger.error(traceback.format_exc())
         return False
+
