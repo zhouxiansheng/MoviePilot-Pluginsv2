@@ -318,7 +318,7 @@ def create_style_static_2(image_path, title, font_path, font_size=(170,75), font
         blended_bg_img = Image.fromarray(blended_bg)
         
         # 添加胶片颗粒效果增强纹理感
-        blended_bg_img = add_film_grain(blended_bg_img, intensity=0.05)
+        blended_bg_img = add_film_grain(blended_bg_img, intensity=0)
         
         # 创建斜线分割的蒙版
         diagonal_mask = create_diagonal_mask(canvas_size, split_top, split_bottom)
@@ -510,3 +510,4 @@ def create_style_static_2(image_path, title, font_path, font_size=(170,75), font
 def create_style_single_2(*args, **kwargs):
     """兼容旧命名"""
     return create_style_static_2(*args, **kwargs)
+
