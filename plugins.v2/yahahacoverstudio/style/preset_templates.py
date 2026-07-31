@@ -15,7 +15,7 @@ def _background() -> Dict[str, Any]:
         "color2": "#0a1628",
         "colorRatio": 0.8,
         "blur": 50,
-        "grain": 0.18,
+        "grain": 0,
     }
 
 
@@ -221,3 +221,4 @@ def create_preset_layout(base_style: str) -> Dict[str, Any]:
 
 def clone_preset_layout(base_style: str) -> Dict[str, Any]:
     return deepcopy(create_preset_layout(base_style))
+
