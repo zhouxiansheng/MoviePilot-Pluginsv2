@@ -136,8 +136,18 @@ class MediaCoverGenerator(_PluginBase):
     _covers_page_history_limit = 50
     _page_tab = "generate-tab"
 
+    # 封面生成进度状态（受 _generation_lock 保护，后台线程写、请求线程读）
+    _generation_running = False
+    _generation_current = 0
+    _generation_total = 0
+    _generation_label = ""
+    _generation_last_tips = ""
+    _generation_thread = None
+    _generation_lock = None
+
     def __init__(self):
         super().__init__()
+        self._generation_lock = threading.Lock()
 
     def init_plugin(self, config: dict = None):
         self.mschain = MediaServerChain()
@@ -672,6 +682,10 @@ class MediaCoverGenerator(_PluginBase):
                 "methods": ["POST", "GET"],
                 "summary": "立即生成媒体库封面(兼容无前导斜杠)",
             },
+            {"path": "/generation_status", "endpoint": self.api_generation_status, "auth": "bear", "methods": ["GET"], "summary": "获取封面生成进度"},
+            {"path": "generation_status", "endpoint": self.api_generation_status, "auth": "bear", "methods": ["GET"], "summary": "获取封面生成进度(兼容无前导斜杠)"},
+            {"path": "/refresh_progress", "endpoint": self.api_refresh_progress, "auth": "bear", "methods": ["POST", "GET"], "summary": "刷新生成进度(触发页面重渲染)"},
+            {"path": "refresh_progress", "endpoint": self.api_refresh_progress, "auth": "bear", "methods": ["POST", "GET"], "summary": "刷新生成进度(触发页面重渲染)(兼容无前导斜杠)"},
             {
                 "path": "/set_cover_style",
                 "endpoint": self.api_set_cover_style,
@@ -743,7 +757,6 @@ class MediaCoverGenerator(_PluginBase):
             return {"code": 1, "msg": f"封面文件删除失败: {e}"}
 
     def api_generate_now(self, style: str = ""):
-        old_style = self._cover_style
         try:
             if not self._enabled:
                 logger.warning("【MediaCoverGenerator】立即生成失败：插件未启用，请先在设置页启用插件并保存")
@@ -763,15 +776,172 @@ class MediaCoverGenerator(_PluginBase):
             if target_style:
                 if target_style not in allowed_styles:
                     return {"code": 1, "msg": f"不支持的风格: {target_style}"}
-                self._cover_style = target_style
-            logger.info(f"【MediaCoverGenerator】收到立即生成请求，风格: {self._cover_style}")
-            tips = self.__update_all_libraries()
-            return {"code": 0, "msg": tips or "封面生成任务已完成"}
+
+            if self.__is_generation_running():
+                logger.warning("【MediaCoverGenerator】立即生成失败：已有生成任务正在执行")
+                return {"code": 1, "msg": "封面正在生成中，请点击「刷新进度」查看进度，或等待完成后再发起"}
+
+            # 异步启动生成任务并立即返回，避免前端长时间等待而看不到进度
+            thread = threading.Thread(
+                target=self.__run_background_generation,
+                args=(target_style,),
+                daemon=True,
+            )
+            with self._generation_lock:
+                self._generation_thread = thread
+                self._generation_running = True
+                self._generation_current = 0
+                self._generation_total = 0
+                self._generation_label = "准备生成"
+                self._generation_last_tips = ""
+            thread.start()
+            logger.info(f"【MediaCoverGenerator】已异步启动封面生成任务，风格: {self._cover_style}")
+            return {"code": 0, "msg": "封面生成任务已开始，请点击「刷新进度」查看进度"}
         except Exception as e:
             logger.error(f"【MediaCoverGenerator】立即生成失败: {e}", exc_info=True)
+            with self._generation_lock:
+                self._generation_running = False
+                self._generation_thread = None
             return {"code": 1, "msg": f"封面生成失败: {e}"}
+
+    def __run_background_generation(self, target_style: str = ""):
+        """后台线程执行封面生成，维护进度状态并在结束后清理。"""
+        old_style = self._cover_style
+        try:
+            if target_style:
+                self._cover_style = target_style
+            tips = self.__update_all_libraries()
+            if tips:
+                with self._generation_lock:
+                    self._generation_last_tips = tips
+        except Exception as e:
+            logger.error(f"【MediaCoverGenerator】后台生成任务异常: {e}", exc_info=True)
+            with self._generation_lock:
+                self._generation_last_tips = f"封面生成失败: {e}"
         finally:
             self._cover_style = old_style
+            self.__refresh_generation_state()
+
+    def __set_generation_progress(self, current: int = 0, total: int = 0, label: str = ""):
+        with self._generation_lock:
+            self._generation_current = max(0, int(current or 0))
+            self._generation_total = max(0, int(total or 0))
+            self._generation_label = str(label or "")
+
+    def __is_generation_running(self) -> bool:
+        self.__refresh_generation_state()
+        with self._generation_lock:
+            running = bool(self._generation_running)
+            thread = self._generation_thread
+        return running or (thread is not None and thread.is_alive())
+
+    def __refresh_generation_state(self):
+        """延迟清理：后台线程已结束时才清除引用与运行标志（线程仍存活时不改动）。"""
+        with self._generation_lock:
+            thread = self._generation_thread
+            if thread is not None and not thread.is_alive():
+                self._generation_thread = None
+                self._generation_running = False
+
+    def api_generation_status(self):
+        """返回封面生成进度状态，供前端查询。"""
+        with self._generation_lock:
+            return {
+                "code": 0,
+                "data": {
+                    "running": bool(self._generation_running),
+                    "current": self._generation_current,
+                    "total": self._generation_total,
+                    "label": self._generation_label,
+                    "tips": self._generation_last_tips,
+                },
+            }
+
+    def api_refresh_progress(self):
+        """供前端「刷新进度」按钮调用，触发页面重渲染以显示最新进度。"""
+        running = self.__is_generation_running()
+        with self._generation_lock:
+            current = self._generation_current
+            total = self._generation_total
+            label = self._generation_label
+            tips = self._generation_last_tips
+        if running:
+            msg = f"正在生成 {current}/{total}" + (f" · {label}" if label else "")
+            return {"code": 0, "msg": msg}
+        return {"code": 0, "msg": tips or "封面生成已完成"}
+
+    def __build_generate_action_content(self) -> list:
+        """构建生成动作区组件：生成中显示进度条+刷新按钮，空闲显示立即生成按钮+上次结果。"""
+        if self.__is_generation_running():
+            with self._generation_lock:
+                current = self._generation_current
+                total = self._generation_total
+                label = self._generation_label
+            progress_value = 0
+            if total > 0:
+                progress_value = min(100, max(0, int(round(current / total * 100))))
+            label_text = f"正在生成 {current}/{total}" + (f" · {label}" if label else "")
+            return [
+                {
+                    "component": "div",
+                    "props": {"class": "d-flex align-center flex-wrap ga-2 mb-2"},
+                    "content": [
+                        {
+                            "component": "VBtn",
+                            "props": {
+                                "variant": "flat",
+                                "color": "primary",
+                                "class": "text-none",
+                                "prepend-icon": "mdi-refresh",
+                            },
+                            "text": "刷新进度",
+                            "events": {"click": {"api": "plugin/MediaCoverGenerator/refresh_progress", "method": "post"}},
+                        },
+                        {
+                            "component": "div",
+                            "props": {"class": "text-body-2 text-medium-emphasis"},
+                            "text": label_text,
+                        },
+                    ],
+                },
+                {
+                    "component": "VProgressLinear",
+                    "props": {
+                        "modelValue": progress_value,
+                        "color": "primary",
+                        "height": "8",
+                        "rounded": True,
+                        "class": "mb-2",
+                    },
+                },
+            ]
+        with self._generation_lock:
+            tips = self._generation_last_tips
+        content = [
+            {
+                "component": "VBtn",
+                "props": {
+                    "variant": "flat",
+                    "color": "primary",
+                    "class": "text-none mb-2",
+                    "prepend-icon": "mdi-play-circle-outline",
+                },
+                "text": "立即生成当前风格",
+                "events": {"click": {"api": "plugin/MediaCoverGenerator/generate_now", "method": "post"}},
+            },
+        ]
+        if tips:
+            content.append({
+                "component": "VAlert",
+                "props": {
+                    "type": "success",
+                    "variant": "tonal",
+                    "density": "compact",
+                    "class": "mb-2",
+                },
+                "text": tips,
+            })
+        return content
 
     def api_set_cover_style(self, style: str = ""):
         try:
@@ -2441,17 +2611,7 @@ class MediaCoverGenerator(_PluginBase):
                                                     "text": f"切换到{'动态' if style_variant == 'static' else '静态'}",
                                                     "events": {"click": {"api": "plugin/MediaCoverGenerator/toggle_style_variant", "method": "post"}},
                                                 },
-                                                            {
-                                                                "component": "VBtn",
-                                                                "props": {
-                                                                    "variant": "flat",
-                                                                    "color": "primary",
-                                                                    "class": "text-none mb-2",
-                                                                    "prepend-icon": "mdi-play-circle-outline",
-                                                                },
-                                                    "text": "立即生成当前风格",
-                                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/generate_now", "method": "post"}},
-                                                },
+                                                            *self.__build_generate_action_content(),
                                                 {
                                                     "component": "div",
                                                     "props": {"class": "text-caption text-medium-emphasis ml-2 mb-2 d-inline-block"},
@@ -2496,17 +2656,7 @@ class MediaCoverGenerator(_PluginBase):
                                                     "text": f"切换到{'动态' if style_variant == 'static' else '静态'}",
                                                     "events": {"click": {"api": "plugin/MediaCoverGenerator/toggle_style_variant", "method": "post"}},
                                                 },
-                                                            {
-                                                                "component": "VBtn",
-                                                                "props": {
-                                                                    "variant": "flat",
-                                                                    "color": "primary",
-                                                                    "class": "text-none mb-2",
-                                                                    "prepend-icon": "mdi-play-circle-outline",
-                                                                },
-                                                    "text": "立即生成当前风格",
-                                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/generate_now", "method": "post"}},
-                                                }
+                                                            *self.__build_generate_action_content()
                                             ],
                                         }
                                     ],
@@ -2903,32 +3053,27 @@ class MediaCoverGenerator(_PluginBase):
         logger.info("开始更新媒体库封面 ...")
         # 开始前确保停止信号已清除
         self._event.clear()
+        cover_style = {
+            "static_1": "静态 1",
+            "static_2": "静态 2",
+            "static_3": "静态 3",
+            "static_4": "静态 4（全屏模糊）",
+            "animated_1": "卡片翻转动画",
+            "animated_2": "帷幕切换动画",
+            "animated_3": "斜向滚动动画",
+            "animated_4": "全屏模糊渐变"
+        }.get(self._cover_style, "静态 1")
+        logger.info(f"当前风格 {cover_style}")
+
+        # 先预扫描所有待处理的媒体库，统计总数用于进度展示
+        pending: List[Tuple[Any, dict]] = []
         for server, service in self._servers.items():
-            # 扫描所有媒体库
             logger.info(f"当前服务器 {server}")
-            cover_style = {
-                "static_1": "静态 1",
-                "static_2": "静态 2",
-                "static_3": "静态 3",
-                "static_4": "静态 4（全屏模糊）",
-                "animated_1": "卡片翻转动画",
-                "animated_2": "帷幕切换动画",
-                "animated_3": "斜向滚动动画",
-                "animated_4": "全屏模糊渐变"
-            }.get(self._cover_style, "静态 1")
-            logger.info(f"当前风格 {cover_style}")
-            # 获取媒体库列表
             libraries = self.__get_server_libraries(service)
             if not libraries:
                 logger.warning(f"服务器 {server} 的媒体库列表获取失败")
                 continue
-            success_count = 0
-            fail_count = 0
             for library in libraries:
-                if self._event.is_set():
-                    logger.info("媒体库封面更新服务停止")
-                    self._event.clear()
-                    return
                 if service.type == 'emby':
                     library_id = library.get("Id")
                 else:
@@ -2936,12 +3081,26 @@ class MediaCoverGenerator(_PluginBase):
                 if self._include_libraries and f"{server}-{library_id}" not in self._include_libraries:
                     logger.info(f"{server}：{library['Name']} 不在列表中，跳过更新封面")
                     continue
-                if self.__update_library(service, library):
-                    logger.info(f"媒体库 {server}：{library['Name']} 封面更新成功")
-                    success_count += 1
-                else:
-                    logger.warning(f"媒体库 {server}：{library['Name']} 封面更新失败")
-                    fail_count += 1
+                pending.append((service, library))
+
+        total = len(pending)
+        self.__set_generation_progress(0, total, "准备生成")
+        success_count = 0
+        fail_count = 0
+        for idx, (service, library) in enumerate(pending, 1):
+            if self._event.is_set():
+                logger.info("媒体库封面更新服务停止")
+                self._event.clear()
+                break
+            library_name = library.get("Name", "")
+            self.__set_generation_progress(idx, total, library_name)
+            logger.info(f"进度 {idx}/{total}：媒体库 {service.name}：{library_name} 开始更新封面")
+            if self.__update_library(service, library):
+                logger.info(f"媒体库 {service.name}：{library_name} 封面更新成功")
+                success_count += 1
+            else:
+                logger.warning(f"媒体库 {service.name}：{library_name} 封面更新失败")
+                fail_count += 1
         tips = f"媒体库封面更新任务结束，成功 {success_count} 个，失败 {fail_count} 个"
         logger.info(tips)
         return tips
