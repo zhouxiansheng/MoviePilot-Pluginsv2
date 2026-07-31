@@ -1923,7 +1923,7 @@ class YahahaCoverStudio(_PluginBase):
             "colorRatio": 0.8,
             "opacity": 1,
             "blur": 50,
-            "grain": 0.18,
+            "grain": 0,
             "zIndex": 0,
         }
         background = dict(background)
@@ -10615,3 +10615,4 @@ class YahahaCoverStudio(_PluginBase):
                 self._scheduler = None
         except Exception as e:
             logger.error(f"停止服务失败: {str(e)}")
+
