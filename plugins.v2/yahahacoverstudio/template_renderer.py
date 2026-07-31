@@ -224,7 +224,7 @@ def normalize_template(layout: Optional[Dict[str, Any]]) -> Dict[str, Any]:
             "colorRatio": 0.8,
             "opacity": 1,
             "blur": 50,
-            "grain": 0.18,
+            "grain": 0,
         },
         "layers": [_normalize_layer(layer) for layer in layers if isinstance(layer, dict)],
     }
@@ -1773,3 +1773,4 @@ def render_template_to_base64(
             output_format=output_format,
         )
     return base64.b64encode(image_bytes).decode("utf-8")
+
