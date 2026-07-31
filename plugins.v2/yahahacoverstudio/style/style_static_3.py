@@ -652,7 +652,7 @@ def create_blur_background(image_path, template_width, template_height, backgrou
 
     # 4. 添加胶片颗粒效果
     # 假设 add_film_grain 函数存在且正常工作
-    final_bg_img = add_film_grain(blended_bg_img, intensity=0.03)
+    final_bg_img = add_film_grain(blended_bg_img, intensity=0)
 
     return final_bg_img
 
@@ -1211,3 +1211,4 @@ def create_style_static_3(library_dir, title, font_path, font_size=(170,75), fon
 def create_style_multi_1(*args, **kwargs):
     """兼容旧命名"""
     return create_style_static_3(*args, **kwargs)
+
