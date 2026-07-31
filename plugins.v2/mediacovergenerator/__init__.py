@@ -686,6 +686,8 @@ class MediaCoverGenerator(_PluginBase):
             {"path": "generation_status", "endpoint": self.api_generation_status, "auth": "bear", "methods": ["GET"], "summary": "获取封面生成进度(兼容无前导斜杠)"},
             {"path": "/refresh_progress", "endpoint": self.api_refresh_progress, "auth": "bear", "methods": ["POST", "GET"], "summary": "刷新生成进度(触发页面重渲染)"},
             {"path": "refresh_progress", "endpoint": self.api_refresh_progress, "auth": "bear", "methods": ["POST", "GET"], "summary": "刷新生成进度(触发页面重渲染)(兼容无前导斜杠)"},
+            {"path": "/stop_generation", "endpoint": self.api_stop_generation, "auth": "bear", "methods": ["POST"], "summary": "停止封面生成任务"},
+            {"path": "stop_generation", "endpoint": self.api_stop_generation, "auth": "bear", "methods": ["POST"], "summary": "停止封面生成任务(兼容无前导斜杠)"},
             {
                 "path": "/set_cover_style",
                 "endpoint": self.api_set_cover_style,
@@ -870,6 +872,14 @@ class MediaCoverGenerator(_PluginBase):
             return {"code": 0, "msg": msg}
         return {"code": 0, "msg": tips or "封面生成已完成"}
 
+    def api_stop_generation(self):
+        """供前端「停止」按钮调用，请求停止当前生成任务（处理完当前媒体库后停止）。"""
+        if not self.__is_generation_running():
+            return {"code": 0, "msg": "当前没有正在执行的生成任务"}
+        self._event.set()
+        logger.info("【MediaCoverGenerator】收到停止生成请求，将在处理完当前媒体库后停止")
+        return {"code": 0, "msg": "已请求停止生成任务，将在处理完当前媒体库后停止"}
+
     def __build_generate_action_content(self) -> list:
         """构建生成动作区组件：生成中显示进度条+刷新按钮，空闲显示立即生成按钮+上次结果。"""
         if self.__is_generation_running():
@@ -883,24 +893,53 @@ class MediaCoverGenerator(_PluginBase):
             label_text = f"正在生成 {current}/{total}" + (f" · {label}" if label else "")
             return [
                 {
-                    "component": "div",
-                    "props": {"class": "d-flex align-center flex-wrap ga-2 mb-2"},
+                    "component": "VRow",
+                    "props": {"align": "center", "noGutters": True, "class": "ga-2 mb-1"},
                     "content": [
                         {
-                            "component": "VBtn",
-                            "props": {
-                                "variant": "flat",
-                                "color": "primary",
-                                "class": "text-none",
-                                "prepend-icon": "mdi-refresh",
-                            },
-                            "text": "刷新进度",
-                            "events": {"click": {"api": "plugin/MediaCoverGenerator/refresh_progress", "method": "post"}},
+                            "component": "VCol",
+                            "props": {"cols": "auto"},
+                            "content": [
+                                {
+                                    "component": "VBtn",
+                                    "props": {
+                                        "variant": "flat",
+                                        "color": "primary",
+                                        "class": "text-none",
+                                        "prepend-icon": "mdi-refresh",
+                                    },
+                                    "text": "刷新进度",
+                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/refresh_progress", "method": "post"}},
+                                }
+                            ],
                         },
                         {
-                            "component": "div",
-                            "props": {"class": "text-body-2 text-medium-emphasis"},
-                            "text": label_text,
+                            "component": "VCol",
+                            "props": {"cols": "auto"},
+                            "content": [
+                                {
+                                    "component": "VBtn",
+                                    "props": {
+                                        "variant": "flat",
+                                        "color": "error",
+                                        "class": "text-none",
+                                        "prepend-icon": "mdi-stop-circle-outline",
+                                    },
+                                    "text": "停止",
+                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/stop_generation", "method": "post"}},
+                                }
+                            ],
+                        },
+                        {
+                            "component": "VCol",
+                            "props": {"cols": "auto"},
+                            "content": [
+                                {
+                                    "component": "div",
+                                    "props": {"class": "text-body-2 text-medium-emphasis"},
+                                    "text": label_text,
+                                }
+                            ],
                         },
                     ],
                 },
@@ -3087,10 +3126,11 @@ class MediaCoverGenerator(_PluginBase):
         self.__set_generation_progress(0, total, "准备生成")
         success_count = 0
         fail_count = 0
+        stopped = False
         for idx, (service, library) in enumerate(pending, 1):
             if self._event.is_set():
                 logger.info("媒体库封面更新服务停止")
-                self._event.clear()
+                stopped = True
                 break
             library_name = library.get("Name", "")
             self.__set_generation_progress(idx, total, library_name)
@@ -3101,7 +3141,12 @@ class MediaCoverGenerator(_PluginBase):
             else:
                 logger.warning(f"媒体库 {service.name}：{library_name} 封面更新失败")
                 fail_count += 1
-        tips = f"媒体库封面更新任务结束，成功 {success_count} 个，失败 {fail_count} 个"
+        self._event.clear()
+        if stopped:
+            tips = f"已停止生成，成功 {success_count} 个，失败 {fail_count} 个"
+            self.__set_generation_progress(success_count + fail_count, total, "已停止")
+        else:
+            tips = f"媒体库封面更新任务结束，成功 {success_count} 个，失败 {fail_count} 个"
         logger.info(tips)
         return tips
                  
