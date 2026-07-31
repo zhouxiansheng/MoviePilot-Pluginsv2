@@ -109,7 +109,7 @@ class MediaCoverGenerator(_PluginBase):
     _seen_keys = set()
     _zh_font_custom = ''
     _en_font_custom = ''
-    _zh_font_preset = 'chaohei'
+    _zh_font_preset = 'lantinghei_gbk'
     _en_font_preset = 'EmblemaOne'
     _zh_font_offset = ''
     _title_spacing = ''
@@ -209,7 +209,7 @@ class MediaCoverGenerator(_PluginBase):
             self._use_primary = config.get("use_primary")
             self._zh_font_custom = config.get("zh_font_custom", "")
             self._en_font_custom = config.get("en_font_custom", "")
-            self._zh_font_preset = config.get("zh_font_preset", "chaohei")
+            self._zh_font_preset = config.get("zh_font_preset", "lantinghei_gbk")
             self._en_font_preset = config.get("en_font_preset", "EmblemaOne")
             self._zh_font_offset = config.get("zh_font_offset")
             self._title_spacing = config.get("title_spacing")
@@ -503,6 +503,7 @@ class MediaCoverGenerator(_PluginBase):
 
     def __get_font_presets(self) -> Tuple[List[Dict[str, str]], List[Dict[str, str]], Dict[str, Optional[str]], Dict[str, Optional[str]]]:
         zh_specs = [
+            {"title": "兰亭特黑简", "value": "lantinghei_gbk", "aliases": ["lantingheigbk", "兰亭特黑简", "lanting_hei", "lantinghei"]},
             {"title": "潮黑", "value": "chaohei", "aliases": ["chaohei", "wendao", "潮黑", "chao_hei"]},
             {"title": "粗雅宋", "value": "yasong", "aliases": ["yasong", "粗雅宋", "multi_1_zh", "ya_song"]},
         ]
@@ -4495,6 +4496,7 @@ class MediaCoverGenerator(_PluginBase):
             self._zh_font_preset = "chaohei"
 
         default_font_url = {
+            "lantinghei_gbk": None,
             "chaohei": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/chaohei.ttf",
             "yasong": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/yasong.ttf",
             "EmblemaOne": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/EmblemaOne.woff2",
@@ -4505,7 +4507,7 @@ class MediaCoverGenerator(_PluginBase):
             "Monoton": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/Monoton.woff2",
             "Plaster": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/Plaster.woff2",
         }
-        default_zh_url = default_font_url.get(self._zh_font_preset, "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/chaohei.ttf")
+        default_zh_url = default_font_url.get(self._zh_font_preset) or "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/chaohei.ttf"
 
         if not self._en_font_preset:
             self._en_font_preset = "EmblemaOne"
