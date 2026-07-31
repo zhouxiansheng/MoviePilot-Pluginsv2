@@ -1,87 +1,32 @@
-# 呀哈哈封面工坊 / Yahaha Cover Studio
+# Emby媒体库封面生成 / MediaCoverGenerator
 
-Yahaha Cover Studio 是新版媒体库封面生成工具，用于为 Emby / Jellyfin 媒体库生成静态或动态封面。新版在原「媒体库封面生成 / Media Cover Generator」基础上增加了可编辑画布、方案管理、历史封面和入库 Webhook 监控。
+MoviePilot 插件，用于为 Emby / Jellyfin / Plex 等媒体库自动生成精美封面海报。
 
-Designed by Yahaha.
+## 功能特性
 
-## MoviePilot 插件版
+- 静态封面与动态封面生成（4种静态风格 + 4种动态风格）
+- 自定义字体支持（默认兰亭特黑简）
+- 异步批量生成，带实时进度显示
+- 支持停止正在进行的生成任务
+- 自定义标题映射、贴图、颜色方案
+- 背景噪点强度可配置
 
-新版插件 ID 为 `YahahaCoverStudio`，配置前缀为 `yahaha_cover_studio_`，避免与旧版 `MediaCoverGenerator` 冲突。
+## 安装
 
-主要能力：
+在 MoviePilot 插件市场中搜索 **Emby媒体库封面生成** 或添加仓库地址安装：
 
-- 静态封面与动态封面生成
-- 可编辑静态布局方案
-- 自定义方案导入、导出、删除和重命名
-- 自定义贴图、字体、标题映射
-- 历史封面浏览、下载和删除
-- Emby / Jellyfin 媒体库素材读取
-- Webhook 入库监控
-- 配置备份与还原
-
-## Docker 独立版
-
-Docker 版不依赖 MoviePilot，可直接运行独立 Web UI。没有 Emby / Jellyfin API 时，也可以使用本地图片模式，只生成封面到本地文件夹。
-
-使用 Docker Hub 镜像：
-
-```bash
-mkdir -p yahaha-cover-studio/data
-docker run -d \
-  --name yahaha-cover-studio \
-  -p 8899:8080 \
-  -v "$PWD/yahaha-cover-studio/data:/app/data" \
-  --restart unless-stopped \
-  justzerock/yahaha-cover-studio:latest
+```
+https://github.com/zhouxiansheng/MoviePilot-Pluginsv2
 ```
 
-使用 Docker Compose：
+## 版本历史
 
-```yaml
-services:
-  yahaha-cover-studio:
-    image: justzerock/yahaha-cover-studio:latest
-    container_name: yahaha-cover-studio
-    ports:
-      - "8899:8080"
-    volumes:
-      - ./data:/app/data
-    restart: unless-stopped
-```
+| 版本 | 说明 |
+|------|------|
+| v0.10.0 | 异步生成+进度显示+停止按钮+兰亭特黑简字体 |
+| v0.9.6 | 背景噪点强度改为用户可配置 |
+| v0.9.5 | 8个style文件透传bg_grain参数 |
 
-飞牛影视等无 API 场景，可以直接把图片按媒体库名放到本地目录：
+## 作者
 
-```text
-data/input/
-  动漫/
-    01.jpg
-    02.jpg
-  音乐/
-    01.jpg
-```
-
-保持设置页「本地图片模式」开启，不需要配置媒体服务器；生成结果会输出到 `data/output`。
-
-默认访问地址：
-
-```text
-http://localhost:8899
-```
-
-也可以使用 GHCR 镜像：
-
-```text
-ghcr.io/justzerock/yahaha-cover-studio:latest
-```
-
-完整部署说明见 [docker-app/README.md](/Users/liu/MoviePilot-Plugins/docker-app/README.md)。从 MoviePilot 插件迁移时，可参考 Docker 版 README，将标题映射、字体、贴图和输出目录迁移到 `docker-app/data`。
-
-## Webhook
-
-独立版建议使用：
-
-```text
-/api/webhook/?token=YAHAAHA_WEBHOOK_TOKEN&source=媒体服务器名
-```
-
-MoviePilot 插件版可在设置页配置 Webhook token 和媒体服务器来源。Emby 需要在通知中勾选「媒体库 -> 新媒体已添加」。不同媒体服务器可能发送 JSON、form-data 或表单字段，Yahaha Cover Studio 会尽量兼容常见格式。
+呀哈哈 (Yahaha)
