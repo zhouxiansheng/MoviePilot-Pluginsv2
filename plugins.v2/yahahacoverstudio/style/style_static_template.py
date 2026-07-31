@@ -45,7 +45,7 @@ def _layout_for(
             "color2": background.get("color2") or "#0a1628",
             "blur": int(blur_size) if blur_size is not None else 50,
             "colorRatio": float(color_ratio) if color_ratio is not None else 0.8,
-            "grain": background.get("grain", 0.18),
+            "grain": 0,
         }
         layout["background"] = background
         scale = _runtime_scale(resolution_config)
@@ -269,3 +269,4 @@ def create_style_single_2(*args, **kwargs):
 
 def create_style_multi_1(*args, **kwargs):
     return create_style_static_3(*args, **kwargs)
+
