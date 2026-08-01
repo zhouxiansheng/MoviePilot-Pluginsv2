@@ -54,7 +54,7 @@ class MediaCoverGenerator(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/icons/emby.png"
     # 插件版本
-    plugin_version = "0.10.7"
+    plugin_version = "0.10.12"
     # 插件作者
     plugin_author = "呀哈哈"
     # 作者主页
@@ -3247,9 +3247,17 @@ class MediaCoverGenerator(_PluginBase):
             except (ValueError, TypeError):
                 return float(default)
         zh_font_offset = _safe_float(self._zh_font_offset, 0)
-        title_spacing = _safe_float(self._title_spacing, 40) * title_scale
+        # 确定 title_spacing 的分辨率缩放比例（统一在此处缩放，风格文件中直接使用）
+        if self._cover_style.startswith("animated"):
+            target_h = 180  # 动态风格强制 320x180
+        elif self._resolution_config and self._resolution_config.height > 0:
+            target_h = self._resolution_config.height
+        else:
+            target_h = 1080
+        res_scale = target_h / 1080.0
+        title_spacing = _safe_float(self._title_spacing, 40) * title_scale * res_scale
         en_line_spacing = _safe_float(self._en_line_spacing, 40) * title_scale
-        logger.info(f"参数值: title_spacing={self._title_spacing!r}(type={type(self._title_spacing).__name__}) -> {title_spacing}, en_line_spacing={self._en_line_spacing!r}(type={type(self._en_line_spacing).__name__}) -> {en_line_spacing}")
+        logger.info(f"参数值: title_spacing={self._title_spacing!r}(type={type(self._title_spacing).__name__}) -> {title_spacing}(res_scale={res_scale}), en_line_spacing={self._en_line_spacing!r}(type={type(self._en_line_spacing).__name__}) -> {en_line_spacing}")
         font_offset = (float(zh_font_offset), float(title_spacing), float(en_line_spacing))
 
         # 记录分辨率配置信息
