@@ -54,7 +54,7 @@ class MediaCoverGenerator(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/icons/emby.png"
     # 插件版本
-    plugin_version = "0.10.13"
+    plugin_version = "0.10.14"
     # 插件作者
     plugin_author = "呀哈哈"
     # 作者主页
@@ -465,6 +465,10 @@ class MediaCoverGenerator(_PluginBase):
         dirs: List[Path] = []
         if self._font_path:
             dirs.append(Path(self._font_path))
+        # 插件自带的本地字体目录（plugins.v2/mediacovergenerator/fonts）
+        plugin_font_dir = Path(__file__).resolve().parent / "fonts"
+        dirs.append(plugin_font_dir)
+        # 应用级字体目录（兼容旧版部署路径）
         repo_font_dir = Path(__file__).resolve().parents[2] / "fonts"
         dirs.append(repo_font_dir)
         unique_dirs: List[Path] = []
@@ -4488,8 +4492,9 @@ class MediaCoverGenerator(_PluginBase):
         if not self._zh_font_preset:
             self._zh_font_preset = "lantinghei_gbk"
 
+        # 预设字体已内置为本地文件，URL 仅作为后备下载源（本地文件失效时使用）
         default_font_url = {
-            "lantinghei_gbk": "https://raw.githubusercontent.com/zhouxiansheng/MoviePilot-Pluginsv2/main/plugins.v2/mediacovergenerator/fonts/lantinghei_gbk.ttf",
+            "lantinghei_gbk": None,
             "chaohei": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/chaohei.ttf",
             "yasong": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/yasong.ttf",
             "EmblemaOne": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/EmblemaOne.woff2",
@@ -4497,10 +4502,10 @@ class MediaCoverGenerator(_PluginBase):
             "Phosphate": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/phosphate.ttf",
             "JosefinSans": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/josefinsans.woff2",
             "LilitaOne": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/lilitaone.woff2",
-            "Monoton": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/Monoton.woff2",
-            "Plaster": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/Plaster.woff2",
+            "Monoton": "https://raw.githubusercontent.com/google/fonts/main/ofl/monoton/Monoton-Regular.ttf",
+            "Plaster": "https://raw.githubusercontent.com/google/fonts/main/ofl/plaster/Plaster-Regular.ttf",
         }
-        default_zh_url = default_font_url.get(self._zh_font_preset) or "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/chaohei.ttf"
+        default_zh_url = default_font_url.get(self._zh_font_preset)
 
         if not self._en_font_preset:
             self._en_font_preset = "EmblemaOne"
@@ -4555,23 +4560,23 @@ class MediaCoverGenerator(_PluginBase):
             final_attr = font_info["final_attr_name"]
             fallback_ext = font_info["fallback_ext"]
 
-
-            extension = self.get_file_extension_from_url(url, fallback_ext=fallback_ext)
-            downloaded_font_file_path = Path(font_dir_path) / f"{download_base}{extension}"
-            hash_file_path = Path(font_dir_path) / hash_filename
-            
             current_font_path = None
             using_local_font = False
             if local_path_cfg:
                 local_font_p = Path(local_path_cfg)
                 if validate_font_file(local_font_p):
-                    logger.info(f"{lang}字体: 使用本地指定路径 {local_font_p}")
+                    logger.info(f"{lang}字体: 使用本地字体 {local_font_p}")
                     current_font_path = local_font_p
                     using_local_font = True
                 else:
-                    logger.warning(f"{log_prefix}{lang}字体: 本地指定路径 {local_font_p} 无效或文件不存在。")
+                    logger.warning(f"{log_prefix}{lang}字体: 本地路径 {local_font_p} 无效或文件不存在。")
 
-            if not using_local_font:
+            # 仅当本地路径无效且存在下载URL时，才走网络下载（用户自定义URL场景）
+            if not using_local_font and url:
+                extension = self.get_file_extension_from_url(url, fallback_ext=fallback_ext)
+                downloaded_font_file_path = Path(font_dir_path) / f"{download_base}{extension}"
+                hash_file_path = Path(font_dir_path) / hash_filename
+
                 url_hash = hashlib.md5(url.encode()).hexdigest()
                 url_has_changed = True
                 if hash_file_path.exists():
@@ -4621,7 +4626,7 @@ class MediaCoverGenerator(_PluginBase):
 
         # 检查是否所有必要的字体都已获取
         if not self._zh_font_path or not self._en_font_path:
-            logger.critical("关键字体文件缺失，插件可能无法正常工作。请检查网络连接或手动下载字体文件。")
+            logger.critical("关键字体文件缺失，插件可能无法正常工作。请检查本地字体文件或手动指定字体路径。")
 
     def __sanitize_filename(self, filename: str) -> str:
         """
