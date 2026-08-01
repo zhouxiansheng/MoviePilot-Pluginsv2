@@ -54,7 +54,7 @@ class MediaCoverGenerator(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/icons/emby.png"
     # 插件版本
-    plugin_version = "0.10.0"
+    plugin_version = "0.10.1"
     # 插件作者
     plugin_author = "呀哈哈"
     # 作者主页
@@ -2396,7 +2396,7 @@ class MediaCoverGenerator(_PluginBase):
             "cover_style_base": "static_1",
             "cover_style_variant": "static",
             "multi_1_blur": True,
-            "zh_font_preset": "chaohei",
+            "zh_font_preset": "lantinghei_gbk",
             "en_font_preset": "EmblemaOne",
             "zh_font_custom": "",
             "en_font_custom": "",
@@ -4470,10 +4470,10 @@ class MediaCoverGenerator(_PluginBase):
         _, _, zh_preset_paths, en_preset_paths = self.__get_font_presets()
 
         if not self._zh_font_preset:
-            self._zh_font_preset = "chaohei"
+            self._zh_font_preset = "lantinghei_gbk"
 
         default_font_url = {
-            "lantinghei_gbk": None,
+            "lantinghei_gbk": "https://raw.githubusercontent.com/zhouxiansheng/MoviePilot-Pluginsv2/main/plugins.v2/mediacovergenerator/fonts/lantinghei_gbk.ttf",
             "chaohei": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/chaohei.ttf",
             "yasong": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/yasong.ttf",
             "EmblemaOne": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/EmblemaOne.woff2",
