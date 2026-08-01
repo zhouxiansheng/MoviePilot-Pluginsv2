@@ -894,57 +894,31 @@ class MediaCoverGenerator(_PluginBase):
             label_text = f"正在生成 {current}/{total}" + (f" · {label}" if label else "")
             return [
                 {
-                    "component": "VRow",
-                    "props": {"align": "center", "noGutters": True, "class": "ga-1 mb-1", "style": "flex-wrap: wrap;"},
-                    "content": [
-                        {
-                            "component": "VCol",
-                            "props": {"cols": "auto"},
-                            "content": [
-                                {
-                                    "component": "VBtn",
-                                    "props": {
-                                        "variant": "flat",
-                                        "color": "primary",
-                                        "size": "small",
-                                        "class": "text-none",
-                                        "prepend-icon": "mdi-refresh",
-                                    },
-                                    "text": "刷新进度",
-                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/refresh_progress", "method": "post"}},
-                                }
-                            ],
-                        },
-                        {
-                            "component": "VCol",
-                            "props": {"cols": "auto"},
-                            "content": [
-                                {
-                                    "component": "VBtn",
-                                    "props": {
-                                        "variant": "flat",
-                                        "color": "error",
-                                        "size": "small",
-                                        "class": "text-none",
-                                        "prepend-icon": "mdi-stop-circle-outline",
-                                    },
-                                    "text": "停止",
-                                    "events": {"click": {"api": "plugin/MediaCoverGenerator/stop_generation", "method": "post"}},
-                                }
-                            ],
-                        },
-                        {
-                            "component": "VCol",
-                            "props": {"cols": "auto", "class": "ml-2"},
-                            "content": [
-                                {
-                                    "component": "div",
-                                    "props": {"class": "text-body-2 text-medium-emphasis"},
-                                    "text": label_text,
-                                }
-                            ],
-                        },
-                    ],
+                    "component": "VBtn",
+                    "props": {
+                        "variant": "flat",
+                        "color": "primary",
+                        "class": "text-none mr-2 mb-2",
+                        "prepend-icon": "mdi-refresh",
+                    },
+                    "text": "刷新进度",
+                    "events": {"click": {"api": "plugin/MediaCoverGenerator/refresh_progress", "method": "post"}},
+                },
+                {
+                    "component": "VBtn",
+                    "props": {
+                        "variant": "flat",
+                        "color": "error",
+                        "class": "text-none mr-2 mb-2",
+                        "prepend-icon": "mdi-stop-circle-outline",
+                    },
+                    "text": "停止",
+                    "events": {"click": {"api": "plugin/MediaCoverGenerator/stop_generation", "method": "post"}},
+                },
+                {
+                    "component": "div",
+                    "props": {"class": "text-body-2 text-medium-emphasis mb-1"},
+                    "text": label_text,
                 },
                 {
                     "component": "VProgressLinear",
@@ -954,6 +928,7 @@ class MediaCoverGenerator(_PluginBase):
                         "height": "6",
                         "rounded": True,
                         "class": "mb-2",
+                        "style": "max-width: 400px;",
                     },
                 },
             ]
