@@ -1046,7 +1046,7 @@ def create_style_static_3(library_dir, title, font_path, font_size=(170,75), fon
             result, line_count = draw_multiline_text_on_image(
                 result,
                 library_eng_name,
-                (s(124.68), zh_y + zh_text_h + s(title_spacing)),
+                (s(124.68), zh_y + zh_text_h + title_spacing),
                 en_font_path,
                 int(font_size),
                 line_spacing,
@@ -1056,7 +1056,7 @@ def create_style_static_3(library_dir, title, font_path, font_size=(170,75), fon
             )
 
             # 根据行数调整色块高度
-            en_y = zh_y + zh_text_h + s(title_spacing)
+            en_y = zh_y + zh_text_h + title_spacing
             color_block_position = (s(84.38), en_y + (s(620.06) - s(624.55)))
             # 基础高度为55，每增加一行增加(font_size + line_spacing)的高度
             color_block_height = base_font_size + line_spacing + (line_count - 1) * (int(font_size) + line_spacing)

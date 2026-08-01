@@ -744,12 +744,12 @@ def create_style_animated_3(library_dir, title, font_path, font_size=(170,75), f
         )
         if title_en:
             text_overlay, line_count = draw_multiline_text_on_image(
-                text_overlay, title_en, (s(124.68), zh_y + zh_text_h + s(title_spacing)),
+                text_overlay, title_en, (s(124.68), zh_y + zh_text_h + title_spacing),
                 en_font_path, en_font_size_s, s(en_line_spacing),
                 shadow=is_blur, shadow_color=text_shadow_color, is_multiline=True
             )
             cb_h = int(en_font_size_s + s(en_line_spacing) + (line_count - 1) * (en_font_size_s + s(en_line_spacing)))
-            en_y = zh_y + zh_text_h + s(title_spacing)
+            en_y = zh_y + zh_text_h + title_spacing
             text_overlay = draw_color_block(text_overlay, (s(84.38), en_y + (s(620.06) - s(624.55))), (s(21.51), cb_h), random_color)
 
         # 预先将文字层和背景合并，减少每帧计算
