@@ -3,11 +3,12 @@
     "name": "Emby封面生成Plus",
     "description": "为Emby/Jellyfin/Plex等媒体库自动生成精美封面海报。基于原版增强：异步生成进度显示、一键停止、兰亭特黑简字体、批量生成优化。",
     "labels": "封面,生成,Emby,媒体库,Plus",
-    "version": "0.10.9",
+    "version": "0.10.10",
     "icon": "https://raw.githubusercontent.com/zhouxiansheng/MoviePilot-Pluginsv2/main/icons/emby.png",
     "author": "呀哈哈",
     "level": 1,
     "history": {
+      "v0.10.10": "风格3静态+动态统一用s(title_spacing)分辨率缩放,彻底修复静态动态间距不一致",
       "v0.10.9": "动态风格3 title_spacing补齐分辨率缩放(与动态1/2/4一致,修复静态动态间距差别过大)",
       "v0.10.8": "动态风格3补齐英文字体自适应+is_multiline判断+色块高度计算(与静态3完全一致)",
       "v0.10.7": "风格3 title_spacing不再被分辨率缩放(480p下s(40)=17.8px导致间距太小)",
