@@ -743,14 +743,46 @@ def create_style_animated_3(library_dir, title, font_path, font_size=(170,75), f
             shadow=is_blur, shadow_color=text_shadow_color
         )
         if title_en:
+            # 英文字体大小自适应（与静态3一致）
+            base_font_size = float(en_font_size) * scale
+            line_spacing = s(en_line_spacing)
+
+            draw = ImageDraw.Draw(text_overlay)
+
+            # 根据文字长度调整字体大小
+            word_count = len(title_en.split())
+            max_chars_per_line = max([len(word) for word in title_en.split()])
+
+            if max_chars_per_line > 10 or word_count > 3:
+                scale_factor = (10 / max(max_chars_per_line, word_count * 3)) ** 0.8
+                scale_factor = max(scale_factor, 0.4)
+                font_size = base_font_size * scale_factor
+                font_size = max(font_size, 30)
+            else:
+                font_size = base_font_size
+
+            # 计算文字宽度，判断是否需要多行
+            zh_font = ImageFont.truetype(zh_font_path, int(max(1, round(zh_font_size_s))))
+            en_font = ImageFont.truetype(en_font_path, int(font_size))
+            zh_bbox = draw.textbbox((0, 0), title_zh, font=zh_font)
+            zh_text_w = zh_bbox[2] - zh_bbox[0]
+            en_bbox = draw.textbbox((0, 0), title_en, font=en_font)
+            en_text_w = en_bbox[2] - en_bbox[0]
+            is_multiline = True if en_text_w > zh_text_w else False
+
+            # 使用多行文本绘制
             text_overlay, line_count = draw_multiline_text_on_image(
                 text_overlay, title_en, (s(124.68), zh_y + zh_text_h + title_spacing),
-                en_font_path, en_font_size_s, s(en_line_spacing),
-                shadow=is_blur, shadow_color=text_shadow_color, is_multiline=True
+                en_font_path, int(font_size), line_spacing,
+                shadow=is_blur, shadow_color=text_shadow_color, is_multiline=is_multiline,
             )
-            cb_h = int(en_font_size_s + s(en_line_spacing) + (line_count - 1) * (en_font_size_s + s(en_line_spacing)))
+
+            # 色块
             en_y = zh_y + zh_text_h + title_spacing
-            text_overlay = draw_color_block(text_overlay, (s(84.38), en_y + (s(620.06) - s(624.55))), (s(21.51), cb_h), random_color)
+            color_block_position = (s(84.38), en_y + (s(620.06) - s(624.55)))
+            color_block_height = base_font_size + line_spacing + (line_count - 1) * (int(font_size) + line_spacing)
+            color_block_size = (s(21.51), color_block_height)
+            text_overlay = draw_color_block(text_overlay, color_block_position, color_block_size, random_color)
 
         # 预先将文字层和背景合并，减少每帧计算
         base_frame = Image.alpha_composite(bg_img, text_overlay)
