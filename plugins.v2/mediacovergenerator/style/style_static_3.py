@@ -987,8 +987,15 @@ def create_style_static_3(library_dir, title, font_path, font_size=(170,75), fon
         text_shadow_color = darken_color(blur_color, 0.8)
         text_shadow_color = darken_color(blur_color, 0.8)
         zh_font_size = float(zh_font_size) * scale
+        # 计算中文标题高度，用于动态计算英文标题位置（title_spacing 直接控制间距）
+        _draw_tmp = ImageDraw.Draw(result)
+        _zh_font_tmp = ImageFont.truetype(zh_font_path, int(max(1, round(zh_font_size))))
+        _zh_bbox_tmp = _draw_tmp.textbbox((0, 0), library_ch_name, font=_zh_font_tmp)
+        zh_text_h = _zh_bbox_tmp[3] - _zh_bbox_tmp[1]
+        # 中文标题 Y（固定位置）
+        zh_y = s(427.34) + zh_font_size * zh_font_offset
         result = draw_text_on_image(
-            result, library_ch_name, (s(73.32), s(427.34) + zh_font_size * zh_font_offset - s(title_spacing)), zh_font_path, int(max(1, round(zh_font_size))),
+            result, library_ch_name, (s(73.32), zh_y), zh_font_path, int(max(1, round(zh_font_size))),
             shadow=is_blur, shadow_color=text_shadow_color
         )
 
@@ -1039,7 +1046,7 @@ def create_style_static_3(library_dir, title, font_path, font_size=(170,75), fon
             result, line_count = draw_multiline_text_on_image(
                 result,
                 library_eng_name,
-                (s(124.68), s(624.55) + s(title_spacing)),
+                (s(124.68), zh_y + zh_text_h + s(title_spacing)),
                 en_font_path,
                 int(font_size),
                 line_spacing,
@@ -1049,7 +1056,8 @@ def create_style_static_3(library_dir, title, font_path, font_size=(170,75), fon
             )
 
             # 根据行数调整色块高度
-            color_block_position = (s(84.38), s(620.06) + s(title_spacing))
+            en_y = zh_y + zh_text_h + s(title_spacing)
+            color_block_position = (s(84.38), en_y + (s(620.06) - s(624.55)))
             # 基础高度为55，每增加一行增加(font_size + line_spacing)的高度
             color_block_height = base_font_size + line_spacing + (line_count - 1) * (int(font_size) + line_spacing)
             color_block_size = (s(21.51), color_block_height)
