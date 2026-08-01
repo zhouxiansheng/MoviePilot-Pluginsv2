@@ -1,5 +1,6 @@
 import base64
 from collections import Counter
+import colorsys
 import io
 from pathlib import Path
 from PIL import Image, ImageFilter, ImageDraw, ImageFont, ImageOps
