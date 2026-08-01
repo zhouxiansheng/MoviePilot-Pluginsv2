@@ -171,7 +171,7 @@ def create_style_animated_4(
         zh_font_offset, title_spacing, en_line_spacing = font_offset
         scaled_font_offset = (
             float(zh_font_offset) * anim_scale,
-            float(title_spacing) * anim_scale,
+            float(title_spacing),
             float(en_line_spacing) * anim_scale,
         )
 

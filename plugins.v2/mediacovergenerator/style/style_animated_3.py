@@ -772,13 +772,13 @@ def create_style_animated_3(library_dir, title, font_path, font_size=(170,75), f
 
             # 使用多行文本绘制
             text_overlay, line_count = draw_multiline_text_on_image(
-                text_overlay, title_en, (s(124.68), zh_y + zh_text_h + s(title_spacing)),
+                text_overlay, title_en, (s(124.68), zh_y + zh_text_h + title_spacing),
                 en_font_path, int(font_size), line_spacing,
                 shadow=is_blur, shadow_color=text_shadow_color, is_multiline=is_multiline,
             )
 
             # 色块
-            en_y = zh_y + zh_text_h + s(title_spacing)
+            en_y = zh_y + zh_text_h + title_spacing
             color_block_position = (s(84.38), en_y + (s(620.06) - s(624.55)))
             color_block_height = base_font_size + line_spacing + (line_count - 1) * (int(font_size) + line_spacing)
             color_block_size = (s(21.51), color_block_height)

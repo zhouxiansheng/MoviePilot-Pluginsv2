@@ -247,7 +247,7 @@ def _build_text_layer(target_w, target_h, title, font_path, font_size, font_offs
             en_lines = [title_en]
             total_en_height = en_bbox[3] - en_bbox[1]
 
-    title_spacing_px = float(title_spacing) * scale if title_en else 0
+    title_spacing_px = float(title_spacing) if title_en else 0
     total_text_height = zh_text_h + total_en_height + title_spacing_px
     total_text_y = left_area_center_y - total_text_height // 2
 

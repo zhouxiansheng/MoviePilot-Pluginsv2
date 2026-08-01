@@ -129,7 +129,7 @@ def _build_text_layer(canvas_size, title, font_path, font_size, font_offset, bg_
             if i < len(en_lines) - 1:
                 en_height += en_line_spacing
 
-    total_h = zh_h + (float(title_spacing) * scale if en_lines else 0) + en_height
+    total_h = zh_h + (float(title_spacing) if en_lines else 0) + en_height
     y0 = left_center_y - int(total_h // 2)
 
     zh_x = left_center_x - zh_w // 2
@@ -140,7 +140,7 @@ def _build_text_layer(canvas_size, title, font_path, font_size, font_offset, bg_
     draw.text((zh_x, zh_y), title_zh, font=zh_font, fill=text_color)
 
     if en_lines:
-        ey = zh_y + zh_h + int(float(title_spacing) * scale)
+        ey = zh_y + zh_h + int(float(title_spacing))
         for line in en_lines:
             eb = draw.textbbox((0, 0), line, font=en_font)
             ew = eb[2] - eb[0]
