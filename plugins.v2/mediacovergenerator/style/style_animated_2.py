@@ -78,7 +78,7 @@ def _build_text_layer(canvas_size, title, font_path, font_size, font_offset, bg_
     title_zh, title_en = title
     zh_font_path, en_font_path = font_path
     zh_font_size, en_font_size = float(font_size[0]), float(font_size[1])
-    zh_font_offset, title_spacing, _ = font_offset
+    zh_font_offset, title_spacing, en_line_spacing = font_offset
 
     # 小分辨率动图按比例放大字体，避免文字过小
     scale = height / 1080.0
@@ -101,7 +101,6 @@ def _build_text_layer(canvas_size, title, font_path, font_size, font_offset, bg_
     zh_h = zh_bbox[3] - zh_bbox[1]
 
     en_lines = []
-    en_line_spacing = max(1, int(en_font.size * 0.12))
     en_height = 0
     if title_en:
         en_bbox = draw.textbbox((0, 0), title_en, font=en_font)

@@ -195,7 +195,7 @@ def _build_text_layer(target_w, target_h, title, font_path, font_size, font_offs
     shadow_draw = ImageDraw.Draw(shadow_layer)
 
     zh_font_size, en_font_size = float(font_size[0]), float(font_size[1])
-    zh_font_offset, title_spacing, _ = font_offset
+    zh_font_offset, title_spacing, en_line_spacing = font_offset
     zh_font_path, en_font_path = font_path
     title_zh, title_en = title
 
@@ -215,7 +215,6 @@ def _build_text_layer(target_w, target_h, title, font_path, font_size, font_offs
     zh_text_w = zh_bbox[2] - zh_bbox[0]
     zh_text_h = zh_bbox[3] - zh_bbox[1]
 
-    en_line_spacing = max(1, int(en_font_size * 0.12 * scale))
     en_lines = []
     total_en_height = 0
 

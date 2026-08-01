@@ -295,8 +295,7 @@ def create_style_static_2(image_path, title, font_path, font_size=(170,75), font
         zh_text_w = zh_bbox[2] - zh_bbox[0]
         zh_text_h = zh_bbox[3] - zh_bbox[1]
         
-        # 定义英文行间距
-        en_line_spacing = int(en_font_size * 0.3)  # 英文行间距为字体大小的30%
+        # 使用用户设置的副标题行间距(en_line_spacing)，未设置时由调用方默认40
         
         # 处理英文标题（如果有）
         en_lines = []
