@@ -3,11 +3,12 @@
     "name": "Emby封面生成Plus",
     "description": "为Emby/Jellyfin/Plex等媒体库自动生成精美封面海报。基于原版增强：异步生成进度显示、一键停止、兰亭特黑简字体、批量生成优化。",
     "labels": "封面,生成,Emby,媒体库,Plus",
-    "version": "0.10.4",
+    "version": "0.10.5",
     "icon": "https://raw.githubusercontent.com/zhouxiansheng/MoviePilot-Pluginsv2/main/icons/emby.png",
     "author": "呀哈哈",
     "level": 1,
     "history": {
+      "v0.10.5": "用try/except修复0值被忽略+添加参数调试日志",
       "v0.10.4": "修复title_spacing/en_line_spacing设为0时被or运算符忽略的bug",
       "v0.10.3": "修复风格3主副标题间距不生效(中文标题位置不受title_spacing影响)",
       "v0.10.2": "修复风格1/2(静态+动态)副标题行间距参数被硬编码覆盖不生效的问题",
