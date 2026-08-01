@@ -54,7 +54,7 @@ class MediaCoverGenerator(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/icons/emby.png"
     # 插件版本
-    plugin_version = "0.10.3"
+    plugin_version = "0.10.4"
     # 插件作者
     plugin_author = "呀哈哈"
     # 作者主页
@@ -3239,9 +3239,10 @@ class MediaCoverGenerator(_PluginBase):
         font_path = (str(self._zh_font_path), str(self._en_font_path))
         font_size = (float(zh_font_size), float(en_font_size))
 
-        zh_font_offset = float(self._zh_font_offset or 0)
-        title_spacing = float(self._title_spacing or 40) * title_scale
-        en_line_spacing = float(self._en_line_spacing or 40) * title_scale
+        # 注意: 不能用 `or` 运算符，因为 0 是有效值但 0 是 falsy
+        zh_font_offset = float(self._zh_font_offset) if self._zh_font_offset not in (None, '') else 0
+        title_spacing = (float(self._title_spacing) if self._title_spacing not in (None, '') else 40) * title_scale
+        en_line_spacing = (float(self._en_line_spacing) if self._en_line_spacing not in (None, '') else 40) * title_scale
         font_offset = (float(zh_font_offset), float(title_spacing), float(en_line_spacing))
 
         # 记录分辨率配置信息
