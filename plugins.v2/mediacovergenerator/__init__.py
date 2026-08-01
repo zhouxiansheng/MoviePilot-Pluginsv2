@@ -4494,7 +4494,7 @@ class MediaCoverGenerator(_PluginBase):
 
         # 预设字体已内置为本地文件，URL 仅作为后备下载源（本地文件失效时使用）
         default_font_url = {
-            "lantinghei_gbk": None,
+            "lantinghei_gbk": "https://raw.githubusercontent.com/zhouxiansheng/MoviePilot-Pluginsv2/main/plugins.v2/mediacovergenerator/fonts/lantinghei_gbk.ttf",
             "chaohei": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/chaohei.ttf",
             "yasong": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/yasong.ttf",
             "EmblemaOne": "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/EmblemaOne.woff2",
