@@ -1036,7 +1036,7 @@ def create_style_static_3(library_dir, title, font_path, font_size=(170,75), fon
             en_bbox = draw.textbbox((0, 0), library_eng_name, font=en_font)
             en_text_w = en_bbox[2] - en_bbox[0]
 
-            is_multiline = True if en_text_w > zh_text_w else False
+            is_multiline = " " in library_eng_name.strip()
             # 打印调试信息
             # logger.debug(f"英文名 '{library_eng_name}' 单词数量: {word_count}, 最长单词长度: {max_chars_per_line}")
             # logger.debug(f"使用字体大小: {font_size:.2f}")

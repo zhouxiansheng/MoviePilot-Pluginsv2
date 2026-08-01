@@ -442,26 +442,10 @@ def create_style_static_1(image_path, title, font_path, font_size=(170,75), font
             en_bbox = draw.textbbox((0, 0), title_en, font=en_font)
             en_full_width = en_bbox[2] - en_bbox[0]
             
-            # 如果英文标题比中文标题宽，且包含多个单词，则分行处理
-            if en_full_width > zh_text_w and " " in title_en:
+            # 只要有空格就按空格分行，每个单词独占一行
+            if " " in title_en:
                 words = title_en.split(" ")
-                current_line = words[0]
-                
-                for word in words[1:]:
-                    test_line = current_line + " " + word
-                    test_bbox = draw.textbbox((0, 0), test_line, font=en_font)
-                    test_width = test_bbox[2] - test_bbox[0]
-                    
-                    # 如果添加新单词后超过中文宽度，则换行
-                    if test_width > zh_text_w:
-                        en_lines.append(current_line)
-                        current_line = word
-                    else:
-                        current_line = test_line
-                
-                # 添加最后一行
-                if current_line:
-                    en_lines.append(current_line)
+                en_lines = [w for w in words if w]
                 
                 # 计算所有英文行的最大宽度和总高度
                 for line in en_lines:

@@ -768,7 +768,7 @@ def create_style_animated_3(library_dir, title, font_path, font_size=(170,75), f
             zh_text_w = zh_bbox[2] - zh_bbox[0]
             en_bbox = draw.textbbox((0, 0), title_en, font=en_font)
             en_text_w = en_bbox[2] - en_bbox[0]
-            is_multiline = True if en_text_w > zh_text_w else False
+            is_multiline = " " in title_en.strip()
 
             # 使用多行文本绘制
             text_overlay, line_count = draw_multiline_text_on_image(

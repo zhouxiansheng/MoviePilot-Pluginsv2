@@ -15,23 +15,9 @@ from app.plugins.mediacovergenerator.utils.color_helper import ColorHelper
 def _wrap_english(draw, text, font, max_width):
     if not text:
         return []
-    bbox = draw.textbbox((0, 0), text, font=font)
-    if (bbox[2] - bbox[0]) <= max_width or " " not in text:
+    if " " not in text:
         return [text]
-    words = text.split(" ")
-    lines = []
-    line = words[0]
-    for word in words[1:]:
-        test = f"{line} {word}"
-        tb = draw.textbbox((0, 0), test, font=font)
-        if (tb[2] - tb[0]) > max_width:
-            lines.append(line)
-            line = word
-        else:
-            line = test
-    if line:
-        lines.append(line)
-    return lines
+    return [w for w in text.split(" ") if w]
 
 
 def create_style_static_4(

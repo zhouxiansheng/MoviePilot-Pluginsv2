@@ -466,26 +466,7 @@ const style3SubtitleLines = computed(() => {
   if (!text) return ['UNTITLED']
   const words = text.split(/\s+/).filter(Boolean)
   if (words.length <= 1) return [text]
-  if (text.length <= 16 && words.length <= 3) return [text]
-
-  let bestSplitIndex = 1
-  let bestScore = Number.POSITIVE_INFINITY
-  for (let index = 1; index < words.length; index += 1) {
-    const first = words.slice(0, index).join(' ')
-    const second = words.slice(index).join(' ')
-    const balancePenalty = Math.abs(first.length - second.length)
-    const midpointPenalty = Math.abs(index - words.length / 2) * 0.6
-    const score = balancePenalty + midpointPenalty
-    if (score < bestScore) {
-      bestScore = score
-      bestSplitIndex = index
-    }
-  }
-
-  return [
-    words.slice(0, bestSplitIndex).join(' '),
-    words.slice(bestSplitIndex).join(' '),
-  ]
+  return words
 })
 
 function getCustomLayerText(layer: CustomTitleLayer | CustomTextLayer) {

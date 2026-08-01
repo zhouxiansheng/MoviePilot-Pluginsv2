@@ -105,20 +105,9 @@ def _build_text_layer(canvas_size, title, font_path, font_size, font_offset, bg_
     if title_en:
         en_bbox = draw.textbbox((0, 0), title_en, font=en_font)
         en_full_w = en_bbox[2] - en_bbox[0]
-        if en_full_w > zh_w and " " in title_en:
+        if " " in title_en:
             words = title_en.split(" ")
-            current_line = words[0]
-            for word in words[1:]:
-                test_line = current_line + " " + word
-                test_bbox = draw.textbbox((0, 0), test_line, font=en_font)
-                test_w = test_bbox[2] - test_bbox[0]
-                if test_w > zh_w:
-                    en_lines.append(current_line)
-                    current_line = word
-                else:
-                    current_line = test_line
-            if current_line:
-                en_lines.append(current_line)
+            en_lines = [w for w in words if w]
         else:
             en_lines = [title_en]
 
