@@ -3,11 +3,12 @@
     "name": "Emby封面生成Plus",
     "description": "为Emby/Jellyfin/Plex等媒体库自动生成精美封面海报。基于原版增强：异步生成进度显示、一键停止、兰亭特黑简字体、批量生成优化。",
     "labels": "封面,生成,Emby,媒体库,Plus",
-    "version": "0.10.15",
+    "version": "0.10.16",
     "icon": "https://raw.githubusercontent.com/zhouxiansheng/MoviePilot-Pluginsv2/main/icons/emby.png",
     "author": "呀哈哈",
     "level": 1,
     "history": {
+      "v0.10.16": "修复APNG压缩二进制格式错误;从Alpine Linux官方包提取正确ELF格式pngquant;新增ELF格式检查防止执行非Linux二进制;三层回退(apngquant->pngquant->PIL)",
       "v0.10.15": "APNG压缩集成pngquant逐帧量化+apngopt无损优化;UI改为0-100数值输入;向后兼容旧配置off/medium/strong自动映射0/60/40;解决APNG闪烁问题",
       "v0.10.14": "全部字体改为本地内置不再依赖网络下载;更新Monoton和Plaster后备下载URL",
       "v0.10.13": "修复动态风格3缺少import colorsys导致生成失败",
