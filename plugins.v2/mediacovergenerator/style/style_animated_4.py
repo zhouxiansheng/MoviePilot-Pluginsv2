@@ -4,7 +4,7 @@ import math
 import os
 import subprocess
 try:
-    from ..utils.apng_compressor import compress_apng
+    from app.plugins.mediacovergenerator.utils.apng_compressor import compress_apng
 except ImportError:
     compress_apng = None
 import tempfile

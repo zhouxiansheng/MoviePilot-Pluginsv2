@@ -116,6 +116,9 @@ def _compress_apng_pil(input_path, output_path, quality=80):
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 def compress_apng(input_path, output_path, quality=80, use_apngopt=True):
+    import os as _os
+    _orig = _os.path.getsize(str(input_path)) if _os.path.exists(str(input_path)) else 0
+    logger.info('compress_apng: quality=%s, input=%sMB' % (quality, round(_orig/1048576, 2)))
     if quality > 0:
         aq = BIN_DIR / 'apngquant'
         if aq.exists() and _is_elf(str(aq)) and _is_supported_arch():
@@ -138,11 +141,14 @@ def compress_apng(input_path, output_path, quality=80, use_apngopt=True):
                 if os.path.exists(tmp):
                     try: os.remove(tmp)
                     except: pass
+        logger.info('trying pngquant per-frame...')
         success, err = _compress_with_pngquant(input_path, output_path, quality)
         if success:
             return True, None
         logger.warning('pngquant failed: %s, trying PIL' % str(err))
-        return _compress_apng_pil(input_path, output_path, quality)
+        _os_size = _os.path.getsize(str(output_path)) if _os.path.exists(str(output_path)) else 0
+        logger.info('pngquant done: %sMB -> %sMB' % (round(_orig/1048576,2), round(_os_size/1048576,2)))
+        return True, None if success else _compress_apng_pil(input_path, output_path, quality)
     if use_apngopt:
         _run_apngopt(str(input_path), str(output_path))
         return True, None

@@ -11,7 +11,7 @@ import random
 from app.log import logger
 import subprocess
 try:
-    from ..utils.apng_compressor import compress_apng
+    from app.plugins.mediacovergenerator.utils.apng_compressor import compress_apng
 except ImportError:
     compress_apng = None
 import tempfile
