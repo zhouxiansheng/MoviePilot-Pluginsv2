@@ -12,8 +12,9 @@ from app.log import logger
 import subprocess
 try:
     from app.plugins.mediacovergenerator.utils.apng_compressor import compress_apng
-except ImportError:
+except Exception as e:
     compress_apng = None
+    logger.warning('apng_compressor import failed: %s' % str(e))
 import tempfile
 import shutil
 from app.plugins.mediacovergenerator.utils.color_utils import (

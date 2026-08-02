@@ -5,8 +5,9 @@ import os
 import subprocess
 try:
     from app.plugins.mediacovergenerator.utils.apng_compressor import compress_apng
-except ImportError:
+except Exception as e:
     compress_apng = None
+    logger.warning('apng_compressor import failed: %s' % str(e))
 import tempfile
 import time
 from pathlib import Path
