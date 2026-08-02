@@ -10,11 +10,71 @@ import math
 import random
 from app.log import logger
 import subprocess
-try:
-    from app.plugins.mediacovergenerator.utils.apng_compressor import compress_apng
-except Exception as e:
-    compress_apng = None
-    logger.warning('apng_compressor import failed: %s' % str(e))
+def _compress_apng_inline(input_path, output_path, quality=80):
+    import os, stat, shutil, platform, tempfile, glob
+    from pathlib import Path
+    plugin_bin = Path(__file__).parent.parent / 'bin'
+    tmpdir = tempfile.mkdtemp(prefix='apng_')
+    try:
+        orig = os.path.getsize(str(input_path))
+        logger.info('APNG compress: q=' + str(quality) + ' input=' + str(round(orig/1048576,2)) + 'MB')
+        ep = os.path.join(tmpdir, 'frame_%04d.png')
+        r = subprocess.run(['ffmpeg', '-i', str(input_path), '-vsync', '0', ep], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=300)
+        if r.returncode != 0: return False, 'extract failed'
+        frames = sorted(glob.glob(os.path.join(tmpdir, 'frame_*.png')))
+        if not frames: return False, 'no frames'
+        logger.info('APNG compress: ' + str(len(frames)) + ' frames')
+        pq = plugin_bin / 'pngquant'
+        used_pq = False
+        if pq.exists():
+            elf = open(str(pq),'rb').read(4) == b'\x7fELF'
+            if elf and platform.machine().lower() in ('x86_64','amd64','x64'):
+                try:
+                    os.chmod(str(pq), os.stat(str(pq)).st_mode | stat.S_IXUSR)
+                    for fp in frames:
+                        c = [str(pq), fp, '--output', fp, '--force', '--quality=0-' + str(quality)]
+                        r = subprocess.run(c, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+                        if r.returncode not in (0,15,99): break
+                    else:
+                        used_pq = True
+                        logger.info('APNG: pngquant OK')
+                except Exception as e:
+                    logger.warning('pngquant err: ' + str(e))
+        if not used_pq:
+            logger.info('APNG: using PIL')
+            from PIL import Image
+            nc = max(2, min(256, int(2+254*quality/100)))
+            for fp in frames:
+                img = Image.open(fp)
+                if img.mode == 'RGBA':
+                    a = img.split()[3]
+                    rgb = img.convert('RGB')
+                    qi = rgb.quantize(colors=nc, method=2, dither=1).convert('RGBA')
+                    qi.putalpha(a)
+                else:
+                    qi = img.quantize(colors=nc, method=2, dither=1)
+                qi.save(fp, format='PNG')
+        to = os.path.join(tmpdir, 'output.png')
+        r2 = subprocess.run(['ffmpeg','-i',ep,'-vcodec','apng','-pix_fmt','rgba','-plays','0','-f','apng',to], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=300)
+        if r2.returncode != 0: return False, 'reassembly failed'
+        ao = plugin_bin / 'apngopt'
+        if ao.exists() and open(str(ao),'rb').read(4)==b'\x7fELF' and platform.machine().lower() in ('x86_64','amd64','x64'):
+            try:
+                os.chmod(str(ao), os.stat(str(ao)).st_mode | stat.S_IXUSR)
+                r3 = subprocess.run([str(ao), to, str(output_path), '-z2'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
+                if r3.returncode != 0: shutil.copy2(to, output_path)
+            except: shutil.copy2(to, output_path)
+        else:
+            shutil.copy2(to, output_path)
+        ns = os.path.getsize(str(output_path))
+        logger.info('APNG done: ' + str(round(orig/1048576,2)) + 'MB -> ' + str(round(ns/1048576,2)) + 'MB (' + ('pngquant' if used_pq else 'PIL') + ')')
+        return True, None
+    except subprocess.TimeoutExpired:
+        return False, 'timeout'
+    except Exception as e:
+        return False, str(e)
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
 import tempfile
 import shutil
 from app.plugins.mediacovergenerator.utils.color_utils import (
@@ -987,8 +1047,8 @@ def create_style_animated_3(library_dir, title, font_path, font_size=(170,75), f
                 if result.stderr:
                     result.stderr = b""
                 # APNG post-processing with pngquant + apngopt
-                if animation_format != 'gif' and reduce_mode > 0 and compress_apng is not None:
-                    success, err = compress_apng(str(output_file), str(output_file), quality=reduce_mode)
+                if animation_format != 'gif' and reduce_mode > 0:
+                    success, err = _compress_apng_inline(str(output_file), str(output_file), quality=reduce_mode)
                     if not success:
                         logger.warning('APNG compression failed: ' + str(err))
             except subprocess.CalledProcessError as e:
