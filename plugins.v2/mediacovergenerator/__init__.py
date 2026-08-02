@@ -1989,7 +1989,7 @@ class MediaCoverGenerator(_PluginBase):
                                                 'props': {'cols': 12, 'md': 3},
                                                 'content': [
                                                     {
-                                                        'component': 'VSelect',
+                                                        'component': 'VTextField',
                                                         'props': {
                                                             'model': 'animation_reduce_colors',
                                                             'label': 'APNG压缩质量 (0-100)',
