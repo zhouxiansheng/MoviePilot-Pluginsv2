@@ -10,6 +10,10 @@ import math
 import random
 from app.log import logger
 import subprocess
+try:
+    from ..utils.apng_compressor import compress_apng
+except ImportError:
+    compress_apng = None
 import tempfile
 import shutil
 from app.plugins.mediacovergenerator.utils.color_utils import (
@@ -949,19 +953,31 @@ def create_style_animated_3(library_dir, title, font_path, font_size=(170,75), f
             ffmpeg_common = ['ffmpeg', '-hide_banner', '-y', '-framerate', str(fps), '-i', str(tmp_path / 'frame_%04d.bmp'), '-threads', '2']
             
             reduce_mode = animation_reduce_colors
-            if isinstance(reduce_mode, bool): reduce_mode = 'strong' if reduce_mode else 'off'
+            if isinstance(reduce_mode, bool): reduce_mode = 80 if reduce_mode else 0
+            if isinstance(reduce_mode, str):
+                if reduce_mode == 'off': reduce_mode = 0
+                elif reduce_mode == 'medium': reduce_mode = 60
+                elif reduce_mode == 'strong': reduce_mode = 40
+                else: reduce_mode = 80
+            elif not isinstance(reduce_mode, (int, float)):
+                reduce_mode = 80
+            else:
+                reduce_mode = max(0, min(100, int(reduce_mode)))
             
             if animation_format == 'gif':
-                p_colors = '64' if reduce_mode == 'strong' else ('128' if reduce_mode == 'medium' else '256')
-                p_dither = 'none' if reduce_mode == 'strong' else ('bayer:bayer_scale=3' if reduce_mode == 'medium' else 'floyd_steinberg')
+                if reduce_mode <= 40:
+                    p_colors = '64'
+                    p_dither = 'none'
+                elif reduce_mode <= 60:
+                    p_colors = '128'
+                    p_dither = 'bayer:bayer_scale=3'
+                else:
+                    p_colors = '256'
+                    p_dither = 'floyd_steinberg'
+                
                 ffmpeg_cmd = ffmpeg_common + ['-filter_complex', f'[0:v] split [a][b]; [a] palettegen=max_colors={p_colors} [p]; [b][p] paletteuse=dither={p_dither}', '-loop', '0', '-f', 'gif', str(output_file)]
             else: # APNG
-                if reduce_mode == 'off':
-                    ffmpeg_cmd = ffmpeg_common + ['-vcodec', 'apng', '-pix_fmt', 'rgba', '-plays', '0', '-f', 'apng', str(output_file)]
-                else:
-                    p_colors = '64' if reduce_mode == 'strong' else '128'
-                    p_dither = 'none' if reduce_mode == 'strong' else 'bayer:bayer_scale=3'
-                    ffmpeg_cmd = ffmpeg_common + ['-filter_complex', f'[0:v] split [a][b]; [a] palettegen=max_colors={p_colors}:reserve_transparent=on [p]; [b][p] paletteuse=dither={p_dither}', '-vcodec', 'apng', '-pix_fmt', 'rgba', '-plays', '0', '-f', 'apng', str(output_file)]
+                ffmpeg_cmd = ffmpeg_common + ['-vcodec', 'apng', '-pix_fmt', 'rgba', '-plays', '0', '-f', 'apng', str(output_file)]
 
             logger.debug("正在启动 ffmpeg...")
             try:
@@ -969,6 +985,11 @@ def create_style_animated_3(library_dir, title, font_path, font_size=(170,75), f
                 result = subprocess.run(ffmpeg_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
                 if result.stderr:
                     result.stderr = b""
+                # APNG post-processing with pngquant + apngopt
+                if animation_format != 'gif' and reduce_mode > 0 and compress_apng is not None:
+                    success, err = compress_apng(str(output_file), str(output_file), quality=reduce_mode)
+                    if not success:
+                        logger.warning('APNG compression failed: ' + str(err))
             except subprocess.CalledProcessError as e:
                 error_msg = e.stderr.decode('utf-8', 'ignore') if e.stderr else "无详细错误信息"
                 logger.error(f"[VER_FIX_PARAMS] ffmpeg 执行失败 (状态码 {e.returncode})")

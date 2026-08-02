@@ -54,7 +54,7 @@ class MediaCoverGenerator(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/icons/emby.png"
     # 插件版本
-    plugin_version = "0.10.14"
+    plugin_version = "0.10.15"
     # 插件作者
     plugin_author = "呀哈哈"
     # 作者主页
@@ -236,13 +236,19 @@ class MediaCoverGenerator(_PluginBase):
             if self._animation_format not in ["apng", "gif"]:
                 self._animation_format = "apng"
             self._animation_resolution = config.get("animation_resolution", "320x180")
-            animation_reduce_colors = config.get("animation_reduce_colors", "medium")
+            animation_reduce_colors = config.get("animation_reduce_colors", 80)
             if isinstance(animation_reduce_colors, bool):
-                self._animation_reduce_colors = "medium" if animation_reduce_colors else "off"
-            elif animation_reduce_colors in ["off", "medium", "strong"]:
-                self._animation_reduce_colors = animation_reduce_colors
+                self._animation_reduce_colors = 80 if animation_reduce_colors else 0
+            elif animation_reduce_colors == "off":
+                self._animation_reduce_colors = 0
+            elif animation_reduce_colors == "medium":
+                self._animation_reduce_colors = 60
+            elif animation_reduce_colors == "strong":
+                self._animation_reduce_colors = 40
+            elif isinstance(animation_reduce_colors, (int, float)):
+                self._animation_reduce_colors = max(0, min(100, int(animation_reduce_colors)))
             else:
-                self._animation_reduce_colors = "medium"
+                self._animation_reduce_colors = 80
 
             self._animated_2_image_count = config.get("animated_2_image_count", 6)
             self._animated_2_departure_type = config.get("animated_2_departure_type", "fly")
@@ -1986,12 +1992,11 @@ class MediaCoverGenerator(_PluginBase):
                                                         'component': 'VSelect',
                                                         'props': {
                                                             'model': 'animation_reduce_colors',
-                                                            'label': '颜色压缩等级',
-                                                            'items': [
-                                                                {'title': '关闭（保真优先）', 'value': 'off'},
-                                                                {'title': '中等压缩', 'value': 'medium'},
-                                                                {'title': '强压缩（体积最小）', 'value': 'strong'}
-                                                            ],
+                                                            'label': 'APNG压缩质量 (0-100)',
+                                                            'type': 'number',
+                                                            'placeholder': '80',
+                                                            'hint': '0=关闭(仅无损优化), 1-100=质量值, 越高画质越好体积越大',
+                                                            'persistentHint': True,
                                                             'prependInnerIcon': 'mdi-palette-outline'
                                                         }
                                                     }
@@ -2421,7 +2426,7 @@ class MediaCoverGenerator(_PluginBase):
             "animation_fps": 24,
             "animation_format": "apng",
             "animation_resolution": "320x180",
-            "animation_reduce_colors": "medium",
+            "animation_reduce_colors": 80,
             "animated_2_image_count": 6,
             "animated_2_departure_type": "fly",
             "clean_images": False,
