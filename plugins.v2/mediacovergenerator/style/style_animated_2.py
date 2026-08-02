@@ -3,6 +3,10 @@ import hashlib
 import math
 import os
 import subprocess
+try:
+    from ..utils.apng_compressor import compress_apng
+except ImportError:
+    compress_apng = None
 import tempfile
 import time
 from pathlib import Path
@@ -303,19 +307,30 @@ def create_style_animated_2(
 
             reduce_mode = animation_reduce_colors
             if isinstance(reduce_mode, bool):
-                reduce_mode = "strong" if reduce_mode else "off"
-            if reduce_mode not in ["off", "medium", "strong"]:
-                reduce_mode = "strong"
+                reduce_mode = 80 if reduce_mode else 0
+            if isinstance(reduce_mode, str):
+                if reduce_mode == "off": reduce_mode = 0
+                elif reduce_mode == "medium": reduce_mode = 60
+                elif reduce_mode == "strong": reduce_mode = 40
+                else: reduce_mode = 80
+            elif not isinstance(reduce_mode, (int, float)):
+                reduce_mode = 80
+            else:
+                reduce_mode = max(0, min(100, int(reduce_mode)))
 
             if animation_format == "gif":
-                p_colors = "64" if reduce_mode == "strong" else ("128" if reduce_mode == "medium" else "256")
-                p_dither = "none" if reduce_mode == "strong" else ("bayer:bayer_scale=3" if reduce_mode == "medium" else "floyd_steinberg")
+                if reduce_mode <= 40: p_colors = "64"
+                elif reduce_mode <= 60: p_colors = "128"
+                else: p_colors = "256"
+                if reduce_mode <= 40: p_dither = "none"
+                elif reduce_mode <= 60: p_dither = "bayer:bayer_scale=3"
+                else: p_dither = "floyd_steinberg"
                 ffmpeg_cmd = ffmpeg_common + [
                     "-filter_complex", f"[0:v] split [a][b]; [a] palettegen=max_colors={p_colors} [p]; [b][p] paletteuse=dither={p_dither}",
                     "-loop", "0", "-f", "gif", str(output_file),
                 ]
             else:
-                if reduce_mode == "off":
+                if True:
                     ffmpeg_cmd = ffmpeg_common + [
                         "-vcodec", "apng", "-pix_fmt", "rgba", "-plays", "0", "-f", "apng", str(output_file),
                     ]
@@ -345,6 +360,11 @@ def create_style_animated_2(
                     return False
                 time.sleep(0.05)
 
+            # APNG post-processing
+            if animation_format != "gif" and reduce_mode > 0 and compress_apng is not None:
+                success, err = compress_apng(str(output_file), str(output_file), quality=reduce_mode)
+                if not success:
+                    logger.warning("APNG compression failed: " + str(err))
             with open(output_file, "rb") as f:
                 return base64.b64encode(f.read()).decode("utf-8")
 

@@ -3,6 +3,10 @@ import hashlib
 import math
 import os
 import subprocess
+try:
+    from ..utils.apng_compressor import compress_apng
+except ImportError:
+    compress_apng = None
 import tempfile
 import time
 from collections import Counter
@@ -749,11 +753,15 @@ def create_style_animated_1(
 
             reduce_mode = animation_reduce_colors
             if isinstance(reduce_mode, bool):
-                reduce_mode = "strong" if reduce_mode else "off"
+                reduce_mode = 80 if reduce_mode else 0
 
             if animation_format == "gif":
-                p_colors = "64" if reduce_mode == "strong" else ("128" if reduce_mode == "medium" else "256")
-                p_dither = "none" if reduce_mode == "strong" else ("bayer:bayer_scale=3" if reduce_mode == "medium" else "floyd_steinberg")
+                if reduce_mode <= 40: p_colors = "64"
+                elif reduce_mode <= 60: p_colors = "128"
+                else: p_colors = "256"
+                if reduce_mode <= 40: p_dither = "none"
+                elif reduce_mode <= 60: p_dither = "bayer:bayer_scale=3"
+                else: p_dither = "floyd_steinberg"
                 ffmpeg_cmd = ffmpeg_common + [
                     "-filter_complex",
                     f"[0:v] split [a][b]; [a] palettegen=max_colors={p_colors} [p]; [b][p] paletteuse=dither={p_dither}",
@@ -764,7 +772,7 @@ def create_style_animated_1(
                     str(output_file),
                 ]
             else:
-                if reduce_mode == "off":
+                if True:
                     ffmpeg_cmd = ffmpeg_common + [
                         "-vcodec",
                         "apng",
@@ -839,6 +847,11 @@ def create_style_animated_1(
                 if ffmpeg_proc and ffmpeg_proc.poll() is None:
                     ffmpeg_proc.kill()
 
+            # APNG post-processing
+            if animation_format != "gif" and reduce_mode > 0 and compress_apng is not None:
+                success, err = compress_apng(str(output_file), str(output_file), quality=reduce_mode)
+                if not success:
+                    logger.warning("APNG compression failed: " + str(err))
             with open(output_file, "rb") as f:
                 final_data = f.read()
 
