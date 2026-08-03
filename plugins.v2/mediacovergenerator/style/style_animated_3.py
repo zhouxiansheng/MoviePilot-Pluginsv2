@@ -27,19 +27,29 @@ def _compress_apng_inline(input_path, output_path, quality=80):
         pq = plugin_bin / 'pngquant'
         used_pq = False
         if pq.exists():
-            elf = open(str(pq),'rb').read(4) == b'\x7fELF'
-            if elf and platform.machine().lower() in ('x86_64','amd64','x64'):
+            pq_data = open(str(pq),'rb').read()
+            elf = pq_data[:4] == b'\x7fELF'
+            pq_size = len(pq_data)
+            logger.info('pngquant: path=' + str(pq) + ' size=' + str(pq_size) + ' elf=' + str(elf) + ' arch=' + platform.machine())
+            if elf and pq_size > 100000 and platform.machine().lower() in ('x86_64','amd64','x64'):
                 try:
-                    os.chmod(str(pq), os.stat(str(pq)).st_mode | stat.S_IXUSR)
+                    os.chmod(str(pq), 0o755)
+                    ok_count = 0
                     for fp in frames:
                         c = [str(pq), fp, '--output', fp, '--force', '--quality=0-' + str(quality)]
                         r = subprocess.run(c, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
-                        if r.returncode not in (0,15,99): break
-                    else:
+                        if r.returncode in (0,15,99):
+                            ok_count += 1
+                        else:
+                            logger.warning('pngquant frame failed: rc=' + str(r.returncode) + ' stderr=' + r.stderr.decode(errors='replace')[:200])
+                            break
+                    if ok_count == len(frames):
                         used_pq = True
-                        logger.info('APNG: pngquant OK')
+                        logger.info('APNG: pngquant OK (' + str(ok_count) + '/' + str(len(frames)) + ' frames)')
                 except Exception as e:
-                    logger.warning('pngquant err: ' + str(e))
+                    logger.warning('pngquant err: ' + str(e) + ' (size=' + str(pq_size) + ')')
+            else:
+                logger.warning('pngquant skipped: elf=' + str(elf) + ' size=' + str(pq_size) + ' (too small or wrong arch)')
         if not used_pq:
             logger.info('APNG: using PIL')
             from PIL import Image
@@ -58,12 +68,25 @@ def _compress_apng_inline(input_path, output_path, quality=80):
         r2 = subprocess.run(['ffmpeg','-i',ep,'-vcodec','apng','-pix_fmt','rgba','-plays','0','-f','apng',to], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=300)
         if r2.returncode != 0: return False, 'reassembly failed'
         ao = plugin_bin / 'apngopt'
-        if ao.exists() and open(str(ao),'rb').read(4)==b'\x7fELF' and platform.machine().lower() in ('x86_64','amd64','x64'):
-            try:
-                os.chmod(str(ao), os.stat(str(ao)).st_mode | stat.S_IXUSR)
-                r3 = subprocess.run([str(ao), to, str(output_path), '-z2'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
-                if r3.returncode != 0: shutil.copy2(to, output_path)
-            except: shutil.copy2(to, output_path)
+        if ao.exists():
+            ao_data = open(str(ao),'rb').read()
+            ao_elf = ao_data[:4] == b'\x7fELF'
+            ao_size = len(ao_data)
+            if ao_elf and ao_size > 100000 and platform.machine().lower() in ('x86_64','amd64','x64'):
+                try:
+                    os.chmod(str(ao), 0o755)
+                    r3 = subprocess.run([str(ao), to, str(output_path), '-z2'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
+                    if r3.returncode != 0:
+                        logger.warning('apngopt failed: rc=' + str(r3.returncode) + ' stderr=' + r3.stderr.decode(errors='replace')[:200])
+                        shutil.copy2(to, output_path)
+                    else:
+                        logger.info('APNG: apngopt OK')
+                except Exception as e:
+                    logger.warning('apngopt err: ' + str(e) + ' (size=' + str(ao_size) + ')')
+                    shutil.copy2(to, output_path)
+            else:
+                logger.warning('apngopt skipped: elf=' + str(ao_elf) + ' size=' + str(ao_size))
+                shutil.copy2(to, output_path)
         else:
             shutil.copy2(to, output_path)
         ns = os.path.getsize(str(output_path))
