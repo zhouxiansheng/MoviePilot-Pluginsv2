@@ -53,11 +53,15 @@ def _compress_apng_inline(input_path, output_path, quality=80):
         logger.info('APNG compress: ' + str(len(frames)) + ' frames')
         arch_ok = platform.machine().lower() in ('x86_64','amd64','x64')
         pq_b64 = plugin_bin / 'pngquant.b64'
-        liq_b64 = plugin_bin / 'libimagequant.so.0.b64'
         pq = Path(os.path.join(bin_tmp, 'pngquant'))
         used_pq = False
         if arch_ok and pq_b64.exists():
-            _restore_binary(liq_b64, Path(os.path.join(bin_tmp, 'libimagequant.so.0')), 67424)
+            for b64_name, bin_name, sz in [
+                ('libimagequant.so.0.b64', 'libimagequant.so.0', 67424),
+                ('libgomp.so.1.b64', 'libgomp.so.1', 348056),
+                ('libpng16.so.16.b64', 'libpng16.so.16', 231344),
+            ]:
+                _restore_binary(plugin_bin / b64_name, Path(os.path.join(bin_tmp, bin_name)), sz)
             if _restore_binary(pq_b64, pq, 39936):
                 try:
                     env = os.environ.copy()

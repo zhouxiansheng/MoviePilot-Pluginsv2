@@ -3,11 +3,12 @@
     "name": "Emby封面生成Plus",
     "description": "为Emby/Jellyfin/Plex等媒体库自动生成精美封面海报。基于原版增强：异步生成进度显示、一键停止、兰亭特黑简字体、批量生成优化。",
     "labels": "封面,生成,Emby,媒体库,Plus",
-    "version": "0.10.24",
+    "version": "0.10.25",
     "icon": "https://raw.githubusercontent.com/zhouxiansheng/MoviePilot-Pluginsv2/main/icons/emby.png",
     "author": "呀哈哈",
     "level": 1,
     "history": {
+      "v0.10.25": "打包pngquant全部动态依赖(libimagequant+libgomp+libpng16)的base64;运行时一次性还原到tmpdir;LD_LIBRARY_PATH加载",
       "v0.10.24": "修复pngquant缺少libimagequant.so.0动态库问题;打包libimagequant.so.0的base64;运行时还原到tmpdir并设置LD_LIBRARY_PATH",
       "v0.10.23": "修复pngquant使用musl动态链接器(Alpine)在glibc Docker容器中无法执行问题;改为Debian glibc版本pngquant",
       "v0.10.22": "修复pngquant写入插件bin目录(只读)后文件丢失问题;改为写入tmpdir临时目录执行;增加fsync确保落盘+写入大小校验",
