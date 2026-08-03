@@ -340,9 +340,17 @@ def compress_apng(input_path, output_path, quality=80):
         logger.info("APNG V11: quality=%s, colors=%s, input=%.1fKB, Pillow=%s, numpy=%s" % (
             quality, n_colors, input_size / 1024, Image.__version__, np.__version__))
 
-        # 备份压缩前的原始文件到固定路径（避免被临时目录清理）
+        # 备份压缩前的原始文件到插件数据目录（方便用户导出对比）
         try:
-            raw_backup = os.path.join(tempfile.gettempdir(), "v11_raw_backup.apng")
+            backup_dir = None
+            try:
+                from app.core.config import settings
+                backup_dir = os.path.join(str(settings.CONFIG_DIR), "plugins", "MediaCoverGenerator")
+            except Exception:
+                pass
+            if backup_dir is None or not os.path.isdir(backup_dir):
+                backup_dir = tempfile.gettempdir()
+            raw_backup = os.path.join(backup_dir, "v11_raw_backup.apng")
             shutil.copy2(str(input_path), raw_backup)
             logger.info("APNG V11: 原始文件已备份到 %s (%.1fKB)" % (raw_backup, os.path.getsize(raw_backup) / 1024))
             logger.info("APNG V11: 可用 docker cp <容器名>:%s ./ 导出对比" % raw_backup)
