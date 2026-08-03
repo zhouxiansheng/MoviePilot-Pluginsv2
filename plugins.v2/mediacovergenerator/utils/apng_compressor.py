@@ -337,8 +337,16 @@ def compress_apng(input_path, output_path, quality=80):
         n_colors = max(2, min(256, int(2 + 254 * quality / 100)))
 
         input_size = os.path.getsize(str(input_path))
-        logger.info("APNG V11: quality=%s, colors=%s, input=%.1fKB" % (
-            quality, n_colors, input_size / 1024))
+        logger.info("APNG V11: quality=%s, colors=%s, input=%.1fKB, Pillow=%s, numpy=%s" % (
+            quality, n_colors, input_size / 1024, Image.__version__, np.__version__))
+
+        # 备份压缩前的原始文件，方便对比
+        try:
+            raw_backup = str(input_path) + ".v11raw"
+            shutil.copy2(str(input_path), raw_backup)
+            logger.info("APNG V11: 原始文件已备份到 %s (%.1fKB)" % (raw_backup, os.path.getsize(raw_backup) / 1024))
+        except Exception:
+            pass
 
         tmpdir = tempfile.mkdtemp(prefix="apng_v11_")
         try:
