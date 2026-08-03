@@ -1,4 +1,5 @@
 pillow>=11.2.1
 numpy>=2.2.0
+apng>=0.3.0
 pytz>=2025.2
 pyyaml>=6.0.2,<7.0.0
