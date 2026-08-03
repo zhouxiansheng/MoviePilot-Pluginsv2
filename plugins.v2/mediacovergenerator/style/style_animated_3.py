@@ -56,7 +56,7 @@ def _compress_apng_inline(input_path, output_path, quality=80):
         pq = Path(os.path.join(bin_tmp, 'pngquant'))
         used_pq = False
         if arch_ok and pq_b64.exists():
-            if _restore_binary(pq_b64, pq, 596936):
+            if _restore_binary(pq_b64, pq, 39936):
                 try:
                     ok_count = 0
                     for fp in frames:
