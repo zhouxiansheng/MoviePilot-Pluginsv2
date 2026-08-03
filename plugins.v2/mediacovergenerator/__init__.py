@@ -239,12 +239,19 @@ class MediaCoverGenerator(_PluginBase):
             animation_reduce_colors = config.get("animation_reduce_colors", 80)
             if isinstance(animation_reduce_colors, bool):
                 self._animation_reduce_colors = 80 if animation_reduce_colors else 0
-            elif animation_reduce_colors == "off":
-                self._animation_reduce_colors = 0
-            elif animation_reduce_colors == "medium":
-                self._animation_reduce_colors = 60
-            elif animation_reduce_colors == "strong":
-                self._animation_reduce_colors = 40
+            elif isinstance(animation_reduce_colors, str):
+                s = animation_reduce_colors.strip().lower()
+                if s == "off":
+                    self._animation_reduce_colors = 0
+                elif s == "medium":
+                    self._animation_reduce_colors = 60
+                elif s == "strong":
+                    self._animation_reduce_colors = 40
+                else:
+                    try:
+                        self._animation_reduce_colors = max(0, min(100, int(s)))
+                    except (ValueError, TypeError):
+                        self._animation_reduce_colors = 80
             elif isinstance(animation_reduce_colors, (int, float)):
                 self._animation_reduce_colors = max(0, min(100, int(animation_reduce_colors)))
             else:
