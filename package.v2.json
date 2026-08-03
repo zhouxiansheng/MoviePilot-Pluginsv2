@@ -3,11 +3,12 @@
     "name": "Emby封面生成Plus",
     "description": "为Emby/Jellyfin/Plex等媒体库自动生成精美封面海报。基于原版增强：异步生成进度显示、一键停止、兰亭特黑简字体、批量生成优化。",
     "labels": "封面,生成,Emby,媒体库,Plus",
-    "version": "0.10.20",
+    "version": "0.10.21",
     "icon": "https://raw.githubusercontent.com/zhouxiansheng/MoviePilot-Pluginsv2/main/icons/emby.png",
     "author": "呀哈哈",
     "level": 1,
     "history": {
+      "v0.10.21": "彻底解决pngquant/apngopt被MoviePilot UTF-8转换损坏问题;改用base64纯文本存储二进制;运行时自动解码还原;ELF完整性检查+自动修复",
       "v0.10.20": "修复pngquant/apngopt二进制文件被Git当文本处理导致Docker中Exec format error;新增.gitattributes强制binary标记",
       "v0.10.19": "将APNG压缩逻辑直接内嵌到style文件中彻底解决Docker插件系统导入路径问题;修复ELF字节串引号丢失;修复if语句冒号丢失",
       "v0.10.18": "修复except只捕获ImportError导致其他异常被静默吞掉;改为except Exception并输出错误日志",

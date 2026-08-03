@@ -10,8 +10,32 @@ import math
 import random
 from app.log import logger
 import subprocess
+def _restore_binary(b64_path, bin_path, expected_size):
+    """从base64文本文件还原二进制可执行文件"""
+    import base64
+    if bin_path.exists():
+        existing = open(str(bin_path), 'rb').read()
+        if len(existing) == expected_size and existing[:4] == b'\x7fELF':
+            os.chmod(str(bin_path), 0o755)
+            return True
+        logger.warning(str(bin_path.name) + ': size=' + str(len(existing)) + ' expected=' + str(expected_size) + ', will restore from b64')
+    try:
+        b64_text = open(str(b64_path), 'r', encoding='utf-8').read().strip()
+        binary = base64.b64decode(b64_text)
+        if len(binary) != expected_size or binary[:4] != b'\x7fELF':
+            logger.warning(str(bin_path.name) + ': b64 decode size=' + str(len(binary)) + ', data corrupted')
+            return False
+        with open(str(bin_path), 'wb') as f:
+            f.write(binary)
+        os.chmod(str(bin_path), 0o755)
+        logger.info(str(bin_path.name) + ': restored from b64, size=' + str(len(binary)))
+        return True
+    except Exception as e:
+        logger.warning(str(bin_path.name) + ': restore failed: ' + str(e))
+        return False
+
 def _compress_apng_inline(input_path, output_path, quality=80):
-    import os, stat, shutil, platform, tempfile, glob
+    import os, stat, shutil, platform, tempfile, glob, base64
     from pathlib import Path
     plugin_bin = Path(__file__).parent.parent / 'bin'
     tmpdir = tempfile.mkdtemp(prefix='apng_')
@@ -24,14 +48,14 @@ def _compress_apng_inline(input_path, output_path, quality=80):
         frames = sorted(glob.glob(os.path.join(tmpdir, 'frame_*.png')))
         if not frames: return False, 'no frames'
         logger.info('APNG compress: ' + str(len(frames)) + ' frames')
+        arch_ok = platform.machine().lower() in ('x86_64','amd64','x64')
         pq = plugin_bin / 'pngquant'
+        pq_b64 = plugin_bin / 'pngquant.b64'
         used_pq = False
-        if pq.exists():
-            pq_data = open(str(pq),'rb').read()
-            elf = pq_data[:4] == b'\x7fELF'
-            pq_size = len(pq_data)
-            logger.info('pngquant: path=' + str(pq) + ' size=' + str(pq_size) + ' elf=' + str(elf) + ' arch=' + platform.machine())
-            if elf and pq_size > 100000 and platform.machine().lower() in ('x86_64','amd64','x64'):
+        if arch_ok:
+            if not _restore_binary(pq_b64, pq, 596936):
+                logger.warning('pngquant: restore failed, will try PIL fallback')
+            if pq.exists():
                 try:
                     os.chmod(str(pq), 0o755)
                     ok_count = 0
@@ -46,12 +70,14 @@ def _compress_apng_inline(input_path, output_path, quality=80):
                     if ok_count == len(frames):
                         used_pq = True
                         logger.info('APNG: pngquant OK (' + str(ok_count) + '/' + str(len(frames)) + ' frames)')
+                    else:
+                        logger.warning('pngquant: only ' + str(ok_count) + '/' + str(len(frames)) + ' frames succeeded')
                 except Exception as e:
-                    logger.warning('pngquant err: ' + str(e) + ' (size=' + str(pq_size) + ')')
-            else:
-                logger.warning('pngquant skipped: elf=' + str(elf) + ' size=' + str(pq_size) + ' (too small or wrong arch)')
+                    logger.warning('pngquant err: ' + str(e))
+        else:
+            logger.info('pngquant: skipped, arch=' + str(platform.machine()))
         if not used_pq:
-            logger.info('APNG: using PIL')
+            logger.info('APNG: using PIL fallback')
             from PIL import Image
             nc = max(2, min(256, int(2+254*quality/100)))
             for fp in frames:
@@ -68,24 +94,18 @@ def _compress_apng_inline(input_path, output_path, quality=80):
         r2 = subprocess.run(['ffmpeg','-i',ep,'-vcodec','apng','-pix_fmt','rgba','-plays','0','-f','apng',to], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=300)
         if r2.returncode != 0: return False, 'reassembly failed'
         ao = plugin_bin / 'apngopt'
-        if ao.exists():
-            ao_data = open(str(ao),'rb').read()
-            ao_elf = ao_data[:4] == b'\x7fELF'
-            ao_size = len(ao_data)
-            if ao_elf and ao_size > 100000 and platform.machine().lower() in ('x86_64','amd64','x64'):
-                try:
-                    os.chmod(str(ao), 0o755)
-                    r3 = subprocess.run([str(ao), to, str(output_path), '-z2'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
-                    if r3.returncode != 0:
-                        logger.warning('apngopt failed: rc=' + str(r3.returncode) + ' stderr=' + r3.stderr.decode(errors='replace')[:200])
-                        shutil.copy2(to, output_path)
-                    else:
-                        logger.info('APNG: apngopt OK')
-                except Exception as e:
-                    logger.warning('apngopt err: ' + str(e) + ' (size=' + str(ao_size) + ')')
+        ao_b64 = plugin_bin / 'apngopt.b64'
+        if arch_ok and _restore_binary(ao_b64, ao, 323969):
+            try:
+                os.chmod(str(ao), 0o755)
+                r3 = subprocess.run([str(ao), to, str(output_path), '-z2'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
+                if r3.returncode != 0:
+                    logger.warning('apngopt failed: rc=' + str(r3.returncode) + ' stderr=' + r3.stderr.decode(errors='replace')[:200])
                     shutil.copy2(to, output_path)
-            else:
-                logger.warning('apngopt skipped: elf=' + str(ao_elf) + ' size=' + str(ao_size))
+                else:
+                    logger.info('APNG: apngopt OK')
+            except Exception as e:
+                logger.warning('apngopt err: ' + str(e))
                 shutil.copy2(to, output_path)
         else:
             shutil.copy2(to, output_path)

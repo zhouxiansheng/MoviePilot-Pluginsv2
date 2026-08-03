@@ -1,5 +1,5 @@
 # Binary files - never do line-ending or encoding conversion
-plugins.v2/mediacovergenerator/bin/* binary
+plugins.v2/mediacovergenerator/bin/*.b64 text
 *.png binary
 *.jpg binary
 *.jpeg binary
