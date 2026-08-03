@@ -1,0 +1,12 @@
+# Binary files - never do line-ending or encoding conversion
+plugins.v2/mediacovergenerator/bin/* binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff2 binary
+*.woff binary
