@@ -58,8 +58,8 @@ def _compress_apng_inline(input_path, output_path, quality=80):
         if arch_ok and pq_b64.exists():
             for b64_name, bin_name, sz in [
                 ('libimagequant.so.0.b64', 'libimagequant.so.0', 67424),
-                ('libgomp.so.1.b64', 'libgomp.so.1', 348056),
-                ('libpng16.so.16.b64', 'libpng16.so.16', 231344),
+                ('libgomp.so.1.b64', 'libgomp.so.1', 290392),
+                ('libpng16.so.16.b64', 'libpng16.so.16', 219056),
             ]:
                 _restore_binary(plugin_bin / b64_name, Path(os.path.join(bin_tmp, bin_name)), sz)
             if _restore_binary(pq_b64, pq, 39936):
