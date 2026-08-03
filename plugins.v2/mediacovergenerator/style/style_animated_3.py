@@ -10,28 +10,29 @@ import math
 import random
 from app.log import logger
 import subprocess
-def _restore_binary(b64_path, bin_path, expected_size):
-    """从base64文本文件还原二进制可执行文件"""
+def _restore_binary(b64_path, dest_path, expected_size):
+    """从base64文本文件还原二进制可执行文件到dest_path(可写目录)"""
     import base64
-    if bin_path.exists():
-        existing = open(str(bin_path), 'rb').read()
-        if len(existing) == expected_size and existing[:4] == b'\x7fELF':
-            os.chmod(str(bin_path), 0o755)
-            return True
-        logger.warning(str(bin_path.name) + ': size=' + str(len(existing)) + ' expected=' + str(expected_size) + ', will restore from b64')
     try:
         b64_text = open(str(b64_path), 'r', encoding='utf-8').read().strip()
         binary = base64.b64decode(b64_text)
         if len(binary) != expected_size or binary[:4] != b'\x7fELF':
-            logger.warning(str(bin_path.name) + ': b64 decode size=' + str(len(binary)) + ', data corrupted')
+            logger.warning(str(b64_path.name) + ': b64 decode size=' + str(len(binary)) + ', data corrupted')
             return False
-        with open(str(bin_path), 'wb') as f:
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(str(dest_path), 'wb') as f:
             f.write(binary)
-        os.chmod(str(bin_path), 0o755)
-        logger.info(str(bin_path.name) + ': restored from b64, size=' + str(len(binary)))
+            f.flush()
+            os.fsync(f.fileno())
+        os.chmod(str(dest_path), 0o755)
+        actual_size = os.path.getsize(str(dest_path))
+        if actual_size != expected_size:
+            logger.warning(str(dest_path.name) + ': written size=' + str(actual_size) + ' expected=' + str(expected_size))
+            return False
+        logger.info(str(dest_path.name) + ': restored from b64, size=' + str(len(binary)) + ' path=' + str(dest_path))
         return True
     except Exception as e:
-        logger.warning(str(bin_path.name) + ': restore failed: ' + str(e))
+        logger.warning(str(dest_path.name) + ': restore failed: ' + str(e))
         return False
 
 def _compress_apng_inline(input_path, output_path, quality=80):
@@ -39,6 +40,8 @@ def _compress_apng_inline(input_path, output_path, quality=80):
     from pathlib import Path
     plugin_bin = Path(__file__).parent.parent / 'bin'
     tmpdir = tempfile.mkdtemp(prefix='apng_')
+    bin_tmp = os.path.join(tmpdir, 'bin')
+    os.makedirs(bin_tmp, exist_ok=True)
     try:
         orig = os.path.getsize(str(input_path))
         logger.info('APNG compress: q=' + str(quality) + ' input=' + str(round(orig/1048576,2)) + 'MB')
@@ -49,15 +52,12 @@ def _compress_apng_inline(input_path, output_path, quality=80):
         if not frames: return False, 'no frames'
         logger.info('APNG compress: ' + str(len(frames)) + ' frames')
         arch_ok = platform.machine().lower() in ('x86_64','amd64','x64')
-        pq = plugin_bin / 'pngquant'
         pq_b64 = plugin_bin / 'pngquant.b64'
+        pq = Path(os.path.join(bin_tmp, 'pngquant'))
         used_pq = False
-        if arch_ok:
-            if not _restore_binary(pq_b64, pq, 596936):
-                logger.warning('pngquant: restore failed, will try PIL fallback')
-            if pq.exists():
+        if arch_ok and pq_b64.exists():
+            if _restore_binary(pq_b64, pq, 596936):
                 try:
-                    os.chmod(str(pq), 0o755)
                     ok_count = 0
                     for fp in frames:
                         c = [str(pq), fp, '--output', fp, '--force', '--quality=0-' + str(quality)]
@@ -74,8 +74,10 @@ def _compress_apng_inline(input_path, output_path, quality=80):
                         logger.warning('pngquant: only ' + str(ok_count) + '/' + str(len(frames)) + ' frames succeeded')
                 except Exception as e:
                     logger.warning('pngquant err: ' + str(e))
+            else:
+                logger.warning('pngquant: restore failed, will try PIL fallback')
         else:
-            logger.info('pngquant: skipped, arch=' + str(platform.machine()))
+            logger.info('pngquant: skipped, arch=' + str(platform.machine()) + ' b64_exists=' + str(pq_b64.exists()))
         if not used_pq:
             logger.info('APNG: using PIL fallback')
             from PIL import Image
@@ -93,11 +95,10 @@ def _compress_apng_inline(input_path, output_path, quality=80):
         to = os.path.join(tmpdir, 'output.png')
         r2 = subprocess.run(['ffmpeg','-i',ep,'-vcodec','apng','-pix_fmt','rgba','-plays','0','-f','apng',to], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=300)
         if r2.returncode != 0: return False, 'reassembly failed'
-        ao = plugin_bin / 'apngopt'
         ao_b64 = plugin_bin / 'apngopt.b64'
-        if arch_ok and _restore_binary(ao_b64, ao, 323969):
+        ao = Path(os.path.join(bin_tmp, 'apngopt'))
+        if arch_ok and ao_b64.exists() and _restore_binary(ao_b64, ao, 323969):
             try:
-                os.chmod(str(ao), 0o755)
                 r3 = subprocess.run([str(ao), to, str(output_path), '-z2'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
                 if r3.returncode != 0:
                     logger.warning('apngopt failed: rc=' + str(r3.returncode) + ' stderr=' + r3.stderr.decode(errors='replace')[:200])
