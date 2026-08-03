@@ -53,15 +53,19 @@ def _compress_apng_inline(input_path, output_path, quality=80):
         logger.info('APNG compress: ' + str(len(frames)) + ' frames')
         arch_ok = platform.machine().lower() in ('x86_64','amd64','x64')
         pq_b64 = plugin_bin / 'pngquant.b64'
+        liq_b64 = plugin_bin / 'libimagequant.so.0.b64'
         pq = Path(os.path.join(bin_tmp, 'pngquant'))
         used_pq = False
         if arch_ok and pq_b64.exists():
+            _restore_binary(liq_b64, Path(os.path.join(bin_tmp, 'libimagequant.so.0')), 67424)
             if _restore_binary(pq_b64, pq, 39936):
                 try:
+                    env = os.environ.copy()
+                    env['LD_LIBRARY_PATH'] = bin_tmp + ':' + env.get('LD_LIBRARY_PATH', '')
                     ok_count = 0
                     for fp in frames:
                         c = [str(pq), fp, '--output', fp, '--force', '--quality=0-' + str(quality)]
-                        r = subprocess.run(c, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+                        r = subprocess.run(c, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, env=env)
                         if r.returncode in (0,15,99):
                             ok_count += 1
                         else:
