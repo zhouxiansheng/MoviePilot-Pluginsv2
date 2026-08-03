@@ -3,11 +3,12 @@
     "name": "Emby封面生成Plus",
     "description": "为Emby/Jellyfin/Plex等媒体库自动生成精美封面海报。基于原版增强：异步生成进度显示、一键停止、兰亭特黑简字体、批量生成优化。",
     "labels": "封面,生成,Emby,媒体库,Plus",
-    "version": "0.11.2",
+    "version": "0.11.3",
     "icon": "https://raw.githubusercontent.com/zhouxiansheng/MoviePilot-Pluginsv2/main/icons/emby.png",
     "author": "呀哈哈",
     "level": 1,
     "history": {
+      "v0.11.3": "修复原始文件备份被临时目录清理的问题;备份路径改为/tmp/v11_raw_backup.apng固定位置;日志增加docker cp导出提示",
       "v0.11.2": "V11压缩增加Pillow版本和numpy版本日志输出;压缩前自动备份原始文件(.v11raw后缀)方便Docker与本地对比",
       "v0.11.1": "修复APNG压缩质量参数始终为80的bug;VTextField type=number返回字符串导致条件分支全部不匹配走else=80;新增字符串到整数的转换逻辑",
       "v0.11.0": "APNG压缩重写为纯Python V11方案(MedianCut+K-means调色板优化+智能透明色+NoDither);不再依赖pngquant/apngopt外部C二进制;风格1-4统一使用apng_compressor.compress_apng;quality参数映射为颜色数(0=跳过,1-100=2+254*q/100色);新增apng包依赖",
